@@ -1,0 +1,7 @@
+worker/src/pricing.json and the request-counting rules for Claude Code and
+Codex logs come from AI Token Monitor by soulduse
+(https://github.com/soulduse/ai-token-monitor), released under the MIT License.
+
+The status bar and hover panel follow the structure of herdr-usage-limits by
+nozikov (https://github.com/nozikov/herdr-usage-limits), released under the
+MIT License.

@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Herdr Token Rank only. Shares no bindings or secrets with other Kohana services.
+  "name": "herdr-token-rank-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{ "pattern": "herdr-rank-api.kohanacloud.com", "custom_domain": true }],
+  "observability": { "enabled": true },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "herdr-token-rank",
+      "database_id": "bad578dc-81cd-4ada-9a98-2a513a4c7866",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // namespace_id values are account-wide; 48101-48103 are reserved for this service.
+  "ratelimits": [
+    { "name": "AUTH_LIMITER", "namespace_id": "48101", "simple": { "limit": 30, "period": 60 } },
+    { "name": "WRITE_LIMITER", "namespace_id": "48102", "simple": { "limit": 20, "period": 60 } },
+    { "name": "READ_LIMITER", "namespace_id": "48103", "simple": { "limit": 120, "period": 60 } }
+  ],
+  "triggers": { "crons": ["17 3 * * *"] },
+  "vars": { "GITHUB_CLIENT_ID": "Ov23li0QZfKZBDtvCKhq" }
+}
