@@ -72,7 +72,7 @@ export function githubButton(id, label, onClick) {
     .bg("#24292F").text_color(COLOR.white).border(1).border_color("#FFFFFF1F")
     .hover((s) => s.bg("#32383F"))
     .on_click((_e, cx) => onClick(cx))
-    .child(svg("mods/token-rank/icons/github.svg").size(15).text_color(COLOR.white))
+    .child(svg("mods/bellwether/icons/github.svg").size(15).text_color(COLOR.white))
     .child(label);
 }
 

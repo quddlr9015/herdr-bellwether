@@ -31,8 +31,8 @@ function footer(s, t) {
   if (s.scanError) status = `Scan failed: ${s.scanError}`;
   return h_flex().gap(8).items_center()
     .child(div().flex_1().min_w(0).truncate().text_size(10.5).text_color(s.scanError ? down(t) : t.dim).child(status))
-    .child(iconButton("tr-refresh", "mods/token-rank/icons/refresh.svg", "Scan and refresh now", s.act.refresh, t))
-    .when(s.tab === "overview", (e) => e.child(iconButton("tr-limits-settings", "mods/token-rank/limits/icons/gear.svg", "Plan limit settings", s.act.limitsSettings, t)));
+    .child(iconButton("tr-refresh", "mods/bellwether/icons/refresh.svg", "Scan and refresh now", s.act.refresh, t))
+    .when(s.tab === "overview", (e) => e.child(iconButton("tr-limits-settings", "mods/bellwether/limits/icons/gear.svg", "Plan limit settings", s.act.limitsSettings, t)));
 }
 
 export function rankPanel(s, t) {
@@ -45,7 +45,7 @@ export function rankPanel(s, t) {
     .text_size(12).text_color(t.foreground)
     .child(h_flex().items_center().justify_between()
       .child(h_flex().gap(7).items_center()
-        .child(svg("mods/token-rank/icons/logo.svg").size(22).text_color(COLOR.accent))
+        .child(svg("mods/bellwether/icons/logo.svg").size(22).text_color(COLOR.accent))
         .child(div().text_size(13).font_semibold().child("Bellwether")))
       .child(tabs(s, t)))
     .when(Boolean(s.notice), (e) => e.child(div().px(10).py(6).rounded(6).bg(t.raised).text_size(11).text_color(t.foreground).child(s.notice ?? "")))

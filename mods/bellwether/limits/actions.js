@@ -6,6 +6,7 @@ import { spendBarOn } from "./lib/settings.js";
 import { toggleFolded, toggleOnBar, togglePanel, toggleProvider, toggleShowBars, toggleShowResetTime, toggleSpendOnBar, toggleWindow } from "./lib/prefs.js";
 
 // Token Rank: own keys, so this copy and a separately installed usage-limits mod don't share state.
+// Shared keys keep the mod's first name, so saved limit preferences carry over.
 export const KEY_STATE = "token-rank.limits.state";
 export const KEY_PREFS = "token-rank.limits.prefs";
 export const KEY_REFRESH = "token-rank.limits.refresh";

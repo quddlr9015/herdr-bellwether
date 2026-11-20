@@ -12,14 +12,14 @@ import { rankPanel } from "./ui/panel.js";
 import UsageLimits from "./limits/main.js";
 import { limitsTrigger } from "./limits/ui/bar.js";
 
-const MOD = "token-rank";
+const MOD = "bellwether";
 const SCAN_EVERY_MS = 10 * 60 * 1000;
 const FRESH_MS = 60 * 1000;
 const PRICING_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const GITHUB_DEVICE_URL = "https://github.com/login/device";
 const AVATAR_PREFIX = "https://avatars.githubusercontent.com/";
 const AVATARS_PER_BOARD = 40;
-const REPO_URL = "https://github.com/quddlr9015/herdr-token-rank";
+const REPO_URL = "https://github.com/quddlr9015/herdr-bellwether";
 // Room the Token Rank numbers take at the right of the bar; the plan limits get the rest.
 const TOKEN_RANK_BAR_W = 330;
 
@@ -34,6 +34,7 @@ const parseJson = (text, fallback) => {
 
 export default class TokenRank extends View {
   init(_props, cx) {
+    // Kept from when the mod was called token-rank, so sign-in and history carry over.
     this.stateDir = `${home()}/.local/state/herdr-token-rank`;
     this.paths = {
       auth: `${this.stateDir}/auth.json`,
@@ -43,7 +44,7 @@ export default class TokenRank extends View {
     };
     this.files = { auth: null, sent: null, pricing: null, history: null };
     this.helper = `${appHome()}/mods/${MOD}/helpers/scan.sh`;
-    // role "panel": the whole panel in a tab (`token-rank:open`) instead of a status-bar block.
+    // role "panel": the whole panel in a tab (`bellwether:open`) instead of a status-bar block.
     this.role = props()?.role === "panel" ? "panel" : "bar";
     this.tab = props()?.tab ?? "overview";
     this.period = "week";
@@ -87,7 +88,7 @@ export default class TokenRank extends View {
       await this.sync(later);
     });
     cx.timer.every(SCAN_EVERY_MS, (later) => later.spawn((task) => this.sync(task)));
-    // Commands for keys.json ("token-rank:refresh") or `herdr-app do token-rank.refresh`.
+    // Commands for keys.json ("bellwether:refresh") or `herdr-app do bellwether.refresh`.
     cx.spawn(async (later) => {
       const commands = { refresh: this.act.refresh, "sign-in": this.act.signIn, "sign-out": this.act.signOut, open: this.act.openTab };
       for (;;) {

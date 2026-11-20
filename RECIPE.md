@@ -1,4 +1,4 @@
-# Bellwether (mod folder `token-rank`)
+# Bellwether
 
 A status-bar block with your AI plan limits (the herdr-usage-limits view, bundled), today's AI coding cost and tokens, a seven-day sparkline and your rank among Herdr users. Clicking anywhere on it opens one panel, which stays open until a click outside or Escape: an overview (plan limits, today, this week, rank), your usage (cards, a 30-day chart split by Claude and Codex, top models, an activity map), daily/weekly/monthly leaderboards (all models, Claude or Codex) ranked by tokens with the estimated cost beside them, or by commits across all models, user profiles, and settings.
 
@@ -33,8 +33,8 @@ Palette (fixed, readable on light and dark themes): violet `#6E56CF` (accent), p
 
 ## Built from
 
-- One mod, `mods/token-rank` (`mod.json`: `"place": "none"`), placed by the layout in the status row with `"min": 330`.
-- `limits/`: herdr-usage-limits (MIT). Bellwether creates the instance itself (`new UsageLimits({})`, then `init({ border: false }, cx)` with its own `cx`, so its timers and notifications re-render Bellwether), and each render calls `parts(cx, width)` for the bar model (drawn with its exported `limitsTrigger`) and its panel (`embedded`, frameless). Opening and closing the panel calls its `act.hover(open)` too. Its `MOD` is `token-rank/limits`, its shared keys start with `token-rank.limits.`, and its preferences fall back to `usage-limits.prefs`.
+- One mod, `mods/bellwether` (`mod.json`: `"place": "none"`), placed by the layout in the status row with `"min": 330`.
+- `limits/`: herdr-usage-limits (MIT). Bellwether creates the instance itself (`new UsageLimits({})`, then `init({ border: false }, cx)` with its own `cx`, so its timers and notifications re-render Bellwether), and each render calls `parts(cx, width)` for the bar model (drawn with its exported `limitsTrigger`) and its panel (`embedded`, frameless). Opening and closing the panel calls its `act.hover(open)` too. Its `MOD` is `bellwether/limits`, its shared keys start with `token-rank.limits.` (the mod's first name, kept so saved preferences carry over), and its preferences fall back to `usage-limits.prefs`.
 - `props: { role: "panel", tab? }` renders the panel alone, centered on `canvas`; the `open` command opens it with `tab.new`. Only the status-bar copy acts on commands; a copy that finds the scan busy reads again after 20 seconds.
 - `main.js` (state, scanning, uploads, API, avatars, sign-in), `lib/` (`scan.js`, `pricing.js`, `stats.js`, `dates.js`, `format.js`, `api.js`), `ui/` (`bar.js`, `panel.js`, `usage.js`, `ranking.js`, `settings.js`, `charts.js`, `style.js`), `helpers/` (`scan.sh`, `record.awk`, `summarize.awk`), `icons/` (logo: a sheep bell, refresh, github).
 - `herdr`: `exec`, `readTextFile`/`writeTextFile`, `spaces()` (local space folders join the repositories read for commits), `notify`, `nextCommand`, `theme`, `props`, `checking`, `appHome`, `home`.
@@ -55,8 +55,8 @@ Palette (fixed, readable on light and dark themes): violet `#6E56CF` (accent), p
 
 ## Done when
 
-- `herdr-app check mods/token-rank` passes.
+- `herdr-app check mods/bellwether` passes.
 - After the first scan the block shows today's cost and a sparkline without signing in, and the Usage tab shows cards, chart, models and activity.
-- `sh mods/token-rank/helpers/scan.sh /tmp/state` prints `U`, `C`, `D` and a final `S … complete` line; a second run reports few changed files and finishes in seconds.
+- `sh mods/bellwether/helpers/scan.sh /tmp/state` prints `U`, `C`, `D` and a final `S … complete` line; a second run reports few changed files and finishes in seconds.
 - Sign-in completes from the panel; the block shows `#N $X`, Ranking highlights your row, and clicking a row opens that user's profile.
 - The two privacy switches change what `GET /v1/me` reports; **Delete my data** (two clicks) signs out and the old token answers 401.

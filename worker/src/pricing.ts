@@ -1,4 +1,4 @@
-import * as shared from "../../mods/token-rank/lib/pricing.js";
+import * as shared from "../../mods/bellwether/lib/pricing.js";
 import pricingJson from "./pricing.json";
 
 export type Provider = "claude" | "codex";

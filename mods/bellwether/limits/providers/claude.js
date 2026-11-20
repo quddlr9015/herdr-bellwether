@@ -51,7 +51,7 @@ export default {
   id: "claude",
   name: "Claude",
   // Token Rank: the official Claude mark (claude.ai favicon) instead of Herdr's Claude Code character.
-  icon: "mods/token-rank/limits/icons/claude.svg",
+  icon: "mods/bellwether/limits/icons/claude.svg",
   helper: "helpers/claude-usage.sh",
   parse,
 };
