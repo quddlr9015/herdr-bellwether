@@ -1,11 +1,14 @@
-import { div, image } from "gpui-kit";
+import { div, image, svg } from "gpui-kit";
 import { h_flex } from "gpui-base";
+
+// Instrument Sans (OFL) ships in this mod's fonts/ folder, which Herdr loads at start.
+export const FONT = "Instrument Sans";
 
 // Jewel tones that read on light and dark Herdr themes alike.
 export const COLOR = {
-  violet: "#6E56CF",
+  accent: "#1E8E5A",
+  clay: "#C15F3C",
   plum: "#A43F86",
-  emerald: "#0E8A6E",
   indigo: "#3E4FA8",
   rust: "#9A4A21",
   slate: "#5B6676",
@@ -13,22 +16,25 @@ export const COLOR = {
   silver: "#8A94A6",
   bronze: "#A8693A",
   white: "#FFFFFF",
+  // Brighter pair for the Claude / Codex split in charts and model bars.
+  coral: "#F2774B",
+  blue: "#4C6FFF",
 };
 
 export const FAMILY = {
-  claude: { label: "Claude", color: COLOR.plum },
-  codex: { label: "Codex", color: COLOR.emerald },
+  claude: { label: "Claude", color: COLOR.coral },
+  codex: { label: "Codex", color: COLOR.blue },
 };
 
 const MEDALS = [COLOR.gold, COLOR.silver, COLOR.bronze];
-const AVATAR_COLORS = [COLOR.violet, COLOR.plum, COLOR.emerald, COLOR.indigo, COLOR.rust, COLOR.slate];
+const AVATAR_COLORS = [COLOR.accent, COLOR.clay, COLOR.plum, COLOR.indigo, COLOR.rust, COLOR.slate];
 
 /** `#rrggbb` with an opacity from 0 to 1. */
 export const alpha = (hex, opacity) => hex + Math.round(opacity * 255).toString(16).padStart(2, "0");
 
 export const down = (t) => t.ansi1 ?? t.blocked;
 
-export const caption = (text, t) => div().text_size(10.5).font_semibold().text_color(t.dim).child(text.toUpperCase());
+export const caption = (text, t) => div().text_size(11).font_semibold().text_color(t.muted).child(text);
 
 export const rule = (t) => div().h(1).bg(t.border).flex_none();
 
@@ -50,16 +56,29 @@ export function segmented(id, options, selected, onPick, t) {
 
 export function button(id, label, onClick, t, { primary = false, danger = false } = {}) {
   return div().id(id).px(11).py(5).rounded(6).cursor_pointer().whitespace_nowrap().font_semibold()
-    .bg(primary ? COLOR.violet : t.raised)
+    .bg(primary ? COLOR.accent : t.raised)
     .text_color(primary ? COLOR.white : danger ? down(t) : t.foreground)
     .hover((s) => s.opacity(0.88))
     .on_click((_e, cx) => onClick(cx))
     .child(label);
 }
 
+/**
+ * GitHub's own sign-in button: the mark in white on GitHub's dark gray, the same
+ * on light and dark themes (a faint edge keeps it from melting into dark ones).
+ */
+export function githubButton(id, label, onClick) {
+  return h_flex().id(id).gap(7).items_center().px(12).py(6).rounded(6).cursor_pointer().whitespace_nowrap().font_semibold()
+    .bg("#24292F").text_color(COLOR.white).border(1).border_color("#FFFFFF1F")
+    .hover((s) => s.bg("#32383F"))
+    .on_click((_e, cx) => onClick(cx))
+    .child(svg("mods/token-rank/icons/github.svg").size(15).text_color(COLOR.white))
+    .child(label);
+}
+
 export function toggle(id, on, onFlip, t) {
   return div().id(id).relative().w(30).h(18).rounded_full().cursor_pointer().flex_none()
-    .bg(on ? COLOR.violet : t.border)
+    .bg(on ? COLOR.accent : t.border)
     .on_click((_e, cx) => onFlip(!on, cx))
     .child(div().absolute().top(2).left(on ? 14 : 2).size(14).rounded_full().bg(COLOR.white).shadow_sm());
 }
@@ -84,9 +103,9 @@ export function rankBadge(rank, t) {
 export function rankChange(rank, previous, t) {
   const cell = div().w(34).flex_none().flex().justify_end().text_size(10.5).font_semibold();
   if (previous == null) {
-    return cell.child(div().px(4).rounded(4).bg(alpha(COLOR.violet, 0.14)).text_color(COLOR.violet).child("NEW"));
+    return cell.child(div().px(4).rounded(4).bg(alpha(COLOR.accent, 0.14)).text_color(COLOR.accent).child("NEW"));
   }
-  if (previous > rank) return cell.text_color(COLOR.emerald).child(`▲${previous - rank}`);
+  if (previous > rank) return cell.text_color(COLOR.accent).child(`▲${previous - rank}`);
   if (previous < rank) return cell.text_color(down(t)).child(`▼${rank - previous}`);
   return cell.text_color(t.dim).child("–");
 }

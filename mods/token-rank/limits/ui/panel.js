@@ -64,5 +64,6 @@ export function limitsPanel(model, session, panel) {
     if (i > 0) body.child(rule(t));
     body.child(g.kind === "spend" ? spendLine(g, t) : limitsGroup(g, model.arrows, panel));
   });
-  return body.child(rule(t)).child(footer(panel));
+  // Token Rank: embedded, its footer already has refresh and settings buttons.
+  return panel.embedded ? body : body.child(rule(t)).child(footer(panel));
 }

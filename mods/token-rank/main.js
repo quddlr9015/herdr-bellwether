@@ -4,6 +4,7 @@ import { h_flex } from "gpui-base";
 import { ApiError, request } from "./lib/api.js";
 import { anchorDay, periodLabel, periodRange, todayUtc } from "./lib/dates.js";
 import { commits, formatTokens, formatUsd } from "./lib/format.js";
+import { historyFile, mergeHistory, parseHistory, readLedger } from "./lib/history.js";
 import { pendingUpload, runScan } from "./lib/scan.js";
 import { buildDays, dayOf, lastDays, sumRange } from "./lib/stats.js";
 import { statusBar } from "./ui/bar.js";
@@ -20,7 +21,7 @@ const AVATAR_PREFIX = "https://avatars.githubusercontent.com/";
 const AVATARS_PER_BOARD = 40;
 const REPO_URL = "https://github.com/quddlr9015/herdr-token-rank";
 // Room the Token Rank numbers take at the right of the bar; the plan limits get the rest.
-const TOKEN_RANK_BAR_W = 230;
+const TOKEN_RANK_BAR_W = 330;
 
 const message = (error) => (error instanceof Error ? error.message : String(error));
 const parseJson = (text, fallback) => {
@@ -38,14 +39,18 @@ export default class TokenRank extends View {
       auth: `${this.stateDir}/auth.json`,
       sent: `${this.stateDir}/uploaded.json`,
       pricing: `${this.stateDir}/pricing.json`,
+      history: `${this.stateDir}/history.json`,
     };
-    this.files = { auth: null, sent: null, pricing: null };
+    this.files = { auth: null, sent: null, pricing: null, history: null };
     this.helper = `${appHome()}/mods/${MOD}/helpers/scan.sh`;
     // role "panel": the whole panel in a tab (`token-rank:open`) instead of a status-bar block.
     this.role = props()?.role === "panel" ? "panel" : "bar";
     this.tab = props()?.tab ?? "overview";
     this.period = "week";
-    this.metric = "cost";
+    // Boards rank by tokens; each row shows the estimated cost beside them.
+    this.metric = "tokens";
+    // Board: "all", "claude" or "codex". Commits are only ranked on "all".
+    this.family = "all";
     this.offset = 0;
     this.viewing = null;
     this.auth = null;
@@ -66,6 +71,10 @@ export default class TokenRank extends View {
     this.avatarBusy = false;
     this.act = this.actions();
     this.barWidth = 0;
+    // Tallest the panel has been. The hover panel hangs from the bar, so a shorter
+    // tab would pull its top edge (and the tabs) out from under the pointer and close it.
+    this.panelMinH = 0;
+    this.panelOpen = false;
     if (checking()) return;
     // Plan limits exactly as the usage-limits mod shows them. This view owns the
     // instance, so its bar segments and panel land in Token Rank's bar and panel.
@@ -97,6 +106,7 @@ export default class TokenRank extends View {
     this.auth = parseJson(this.files.auth, null);
     this.sent = parseJson(this.files.sent, {});
     this.pricing = parseJson(this.files.pricing, null)?.table ?? null;
+    this.history = parseHistory(this.files.history);
   }
 
   /** Replaces one of our JSON files, re-reading it once if another write got there first. */
@@ -129,7 +139,7 @@ export default class TokenRank extends View {
       const table = await request("GET", "/v1/pricing");
       this.pricing = table;
       await this.save("pricing", { fetched_at: Date.now(), table });
-      this.days = buildDays(this.scan, this.pricing);
+      this.rebuildDays();
       cx.notify();
     } catch {
       // Keep the cached table (or show tokens only) until the next scan retries.
@@ -160,11 +170,32 @@ export default class TokenRank extends View {
       this.scanError = message(error);
     }
     this.scanning = false;
-    this.days = buildDays(this.scan, this.pricing);
+    await this.keepHistory();
+    this.rebuildDays();
     cx.notify();
     await this.loadPricing(cx);
     if (this.auth && this.scan) await this.upload(cx);
     await this.refresh(cx, true);
+  }
+
+  /** Days for the charts and totals: the kept history with the current scan on top. */
+  rebuildDays() {
+    this.days = buildDays({ days: mergeHistory(this.history, this.scan) }, this.pricing);
+  }
+
+  /** Writes the scanned days into history.json (the first time, with the ledger's older days). */
+  async keepHistory() {
+    if (!this.scan) return;
+    try {
+      const saved = this.history ?? await readLedger(`${appHome()}/mods/${MOD}/helpers`, this.stateDir);
+      const days = mergeHistory(saved, this.scan);
+      const file = historyFile(days);
+      if (JSON.stringify(file) === this.files.history) return;
+      this.history = days;
+      await this.save("history", file);
+    } catch {
+      // Totals still show the scan window; the next scan tries again.
+    }
   }
 
   async upload(cx) {
@@ -207,16 +238,20 @@ export default class TokenRank extends View {
     }
   }
 
+  boardQuery(date) {
+    return `period=${this.period}&metric=${this.metric}&date=${date}&family=${this.family}`;
+  }
+
   /** The shown board and standing, today's standing for the status bar, and an open profile. */
   async refresh(cx, force = false) {
     const date = this.anchor();
-    const query = `period=${this.period}&metric=${this.metric}&date=${date}`;
+    const query = this.boardQuery(date);
     const loads = [this.fetchCached(`board:${query}`, () => request("GET", `/v1/leaderboard?${query}`), force)];
     if (this.auth) {
       const token = this.auth.token;
       loads.push(this.fetchCached(`me:${query}`, () => request("GET", `/v1/me?${query}`, { token }), force));
-      loads.push(this.fetchCached("me:today", () => request("GET", `/v1/me?period=day&metric=cost&date=${todayUtc()}`, { token }), force));
-      loads.push(this.fetchCached("me:week", () => request("GET", `/v1/me?period=week&metric=cost&date=${todayUtc()}`, { token }), force));
+      loads.push(this.fetchCached("me:today", () => request("GET", `/v1/me?period=day&metric=tokens&date=${todayUtc()}`, { token }), force));
+      loads.push(this.fetchCached("me:week", () => request("GET", `/v1/me?period=week&metric=tokens&date=${todayUtc()}`, { token }), force));
     }
     if (this.viewing) {
       const login = this.viewing;
@@ -237,7 +272,7 @@ export default class TokenRank extends View {
 
   /** Downloads avatars of the shown rows into the mod's hidden .avatars folder, one at a time. */
   queueAvatars(cx) {
-    const board = this.cache[`board:period=${this.period}&metric=${this.metric}&date=${this.anchor()}`]?.data;
+    const board = this.cache[`board:${this.boardQuery(this.anchor())}`]?.data;
     const people = (board?.entries ?? []).slice(0, AVATARS_PER_BOARD).map((e) => [e.login, e.avatar_url]);
     if (this.auth) people.push([this.auth.login, this.auth.avatar_url]);
     const profile = this.viewing && this.cache[`profile:${this.viewing}`]?.data;
@@ -286,7 +321,7 @@ export default class TokenRank extends View {
         if (reply.status !== "ok") throw new Error(reply.status === "denied" ? "GitHub sign-in was cancelled." : "The code expired. Try again.");
         this.signIn = null;
         await this.setAuth({ token: reply.token, login: reply.user.login, avatar_url: reply.user.avatar_url });
-        notify({ title: "Token Rank", body: `Signed in as ${reply.user.login}. Your totals upload every 10 minutes.`, level: "success" });
+        notify({ title: "Bellwether", body: `Signed in as ${reply.user.login}. Your totals upload every 10 minutes.`, level: "success" });
         this.tab = "ranking";
         cx.notify();
         await this.sync(cx);
@@ -305,7 +340,7 @@ export default class TokenRank extends View {
     const total = sumRange(this.days, week.from, week.to);
     const mine = this.cache["me:week"]?.data;
     const amount = this.pricing ? `${formatUsd(total.cost)} · ${formatTokens(total.tokens)} tokens` : `${formatTokens(total.tokens)} tokens`;
-    const rank = mine?.rank ? ` · #${mine.rank} on Token Rank` : "";
+    const rank = mine?.rank ? ` · #${mine.rank} on Bellwether` : "";
     return `My AI coding this week: ${amount} · ${commits(total.commits)}${rank}. Herdr mod: ${REPO_URL}`;
   }
 
@@ -315,13 +350,22 @@ export default class TokenRank extends View {
       cx.spawn((task) => this.refresh(task));
     };
     return {
-      hover: (hovered, cx) => {
-        this.limits?.act.hover(hovered, cx);
-        if (hovered) cx.spawn((task) => this.refresh(task));
+      openPanel: (open, cx) => {
+        this.panelOpen = open;
+        // Each opening starts at the panel's own height again.
+        if (open) this.panelMinH = 0;
+        this.limits?.act.hover(open, cx);
+        if (open) cx.spawn((task) => this.refresh(task));
+        cx.notify();
       },
       resize: (size, cx) => {
         if (size.width === this.barWidth) return;
         this.barWidth = size.width;
+        cx.notify();
+      },
+      panelSize: (size, cx) => {
+        if (size.height <= this.panelMinH + 1) return;
+        this.panelMinH = Math.ceil(size.height);
         cx.notify();
       },
       pickTab: (tab, cx) => {
@@ -338,6 +382,11 @@ export default class TokenRank extends View {
         this.metric = metric;
         reload(cx);
       },
+      pickFamily: (family, cx) => {
+        this.family = family;
+        if (family !== "all" && this.metric === "commits") this.metric = "tokens";
+        reload(cx);
+      },
       shift: (steps, cx) => {
         this.offset = Math.max(0, this.offset + steps);
         reload(cx);
@@ -351,8 +400,12 @@ export default class TokenRank extends View {
         cx.notify();
       },
       openGitHubProfile: (login, cx) => cx.open_url(`https://github.com/${login}`),
-      openTab: () => run("tab.new", { name: "Token Rank", mod: MOD, props: { role: "panel" } }),
-      refresh: (cx) => cx.spawn((task) => this.sync(task)),
+      openTab: () => run("tab.new", { name: "Bellwether", mod: MOD, props: { role: "panel" } }),
+      refresh: (cx) => {
+        this.limits?.act.refresh(cx);
+        cx.spawn((task) => this.sync(task));
+      },
+      limitsSettings: (cx) => this.limits?.act.show("settings", cx),
       signIn: (cx) => {
         this.notice = null;
         this.signIn = {};
@@ -416,21 +469,22 @@ export default class TokenRank extends View {
     const spark = this.scan ? lastDays(this.days, 7).map((d) => (priced ? d.cost : d.tokens)) : null;
     const rank = this.auth ? this.cache["me:today"]?.data?.rank ?? null : null;
     if (this.signIn) return { label: this.signIn.user_code ? `Enter ${this.signIn.user_code} on GitHub` : "Signing in…", accent: true };
-    if (!this.scan) return { label: this.scanning ? "Reading logs…" : "Token Rank", accent: false };
-    const today = priced ? formatUsd(todayUsage.cost ?? 0) : `${formatTokens(todayUsage.tokens)} tok`;
-    return { rank, today, accent: true, spark };
+    if (!this.scan) return { label: this.scanning ? "Reading logs…" : "Bellwether", accent: false };
+    const today = priced ? formatUsd(todayUsage.cost ?? 0) : null;
+    return { rank, today: today ?? formatTokens(todayUsage.tokens), todayTokens: today ? formatTokens(todayUsage.tokens) : null, accent: true, spark };
   }
 
   render(cx) {
     const t = theme();
     const limits = this.limits?.parts(cx, Math.max(0, this.barWidth - TOKEN_RANK_BAR_W)) ?? null;
     const date = this.anchor();
-    const query = `period=${this.period}&metric=${this.metric}&date=${date}`;
+    const query = this.boardQuery(date);
     const boardEntry = this.cache[`board:${query}`];
     const settings = this.cache["me:today"]?.data?.settings ?? null;
     const panel = rankPanel({
       act: this.act,
       tab: this.tab,
+      panelMinH: this.panelMinH,
       limitsPanel: limits?.panel ?? null,
       weekStanding: this.cache["me:week"]?.data ?? null,
       days: this.days,
@@ -438,6 +492,7 @@ export default class TokenRank extends View {
       pricingVersion: this.pricing?.version ?? null,
       scanned: Boolean(this.scan),
       period: this.period,
+      family: this.family,
       metric: this.metric,
       offset: this.offset,
       periodText: periodLabel(this.period, date, this.offset),
@@ -466,7 +521,8 @@ export default class TokenRank extends View {
     return statusBar({
       ...this.bar(),
       limits: limits ? limitsTrigger({ ...limits.bar, onHover: () => {} }, t) : null,
-      onHover: this.act.hover,
+      open: this.panelOpen,
+      onOpenChange: this.act.openPanel,
       onResize: this.act.resize,
       panel,
       border: props()?.border,

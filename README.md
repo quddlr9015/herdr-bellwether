@@ -1,17 +1,17 @@
-# Token Rank for Herdr
+# Bellwether for Herdr
 
-A Herdr mod that shows your AI plan limits and coding spend in the status bar and ranks it against other Herdr users.
+A Herdr mod (folder `mods/token-rank`) that shows your AI plan limits and coding spend in the status bar and ranks it against other Herdr users. A bellwether is the belled ram that leads the flock.
 
-Everything is in one block with one hover panel. The left part of the block is [herdr-usage-limits](https://github.com/nozikov/herdr-usage-limits), bundled with the same look: each provider's icon with its 5-hour, weekly and per-model limits as bars with a pace mark and a percentage. The right part is Token Rank: today's estimated cost, a seven-day sparkline and your rank.
+Everything is in one block with one panel, opened by a click. The left part of the block is [herdr-usage-limits](https://github.com/nozikov/herdr-usage-limits), bundled with the same look: each provider's icon with its 5-hour, weekly and per-model limits as bars with a pace mark and a percentage. The right part is Bellwether: today's estimated cost, a seven-day sparkline and your rank.
 
-Token Rank reads the session logs Claude Code and Codex already write on your machine, prices every request per model, counts the commits you made in the repositories your agents worked in, and puts it all in a hover panel with four tabs:
+Bellwether reads the session logs Claude Code and Codex already write on your machine, prices every request per model, counts the commits you made in the repositories your agents worked in, and puts it all in a panel with four tabs (a click on the block opens it; a click outside or Escape closes it):
 
 - **Overview**: the plan limits panel from usage-limits (this session's context, every limit with its pace and time to reset, its refresh and settings), then today's and this week's cost and your weekly rank.
 - **Usage**: today, this week and this month; the last 30 days split by Claude and Codex; your top models; a six-week activity map and your streak. Works without signing in, and nothing leaves your machine until you do.
-- **Ranking**: daily, weekly and monthly leaderboards by cost, tokens or commits, with medals, rank changes against the previous period, past periods, and a profile for every listed user.
+- **Ranking**: daily, weekly and monthly leaderboards for all models, Claude or Codex, ranked by tokens (each row also shows the estimated cost) or, across all models, by commits, with medals, rank changes against the previous period, past periods, and a profile for every listed user.
 - **Settings**: GitHub sign-in, whether you are listed, whether commit counts are shared, a weekly summary to paste anywhere, and deleting your data.
 
-![Token Rank](preview.png)
+![Bellwether](preview.png)
 
 ## Install
 
@@ -22,7 +22,7 @@ Token Rank reads the session logs Claude Code and Codex already write on your ma
    { "id": "token-rank", "type": "block", "size": { "weight": 3.4 }, "min": 330, "content": { "mod": "token-rank" } }
    ```
 
-   It already shows plan limits, so remove a separate `usage-limits` block if you have one. Limit display choices made there carry over until you change them in Token Rank.
+   It already shows plan limits, so remove a separate `usage-limits` block if you have one. Limit display choices made there carry over until you change them in Bellwether.
 
 3. Run `herdr-app check ~/.config/herdr-app/mods/token-rank`.
 

@@ -10,4 +10,10 @@ panel. Changes, each marked "Token Rank:" in the source: the asset/helper path
 constant (lib/mod.js), its shared-state keys (actions.js,
 lib/session-binding.js), props from the owner with the usage-limits preferences
 as a fallback and a parts() method (main.js), an exported limitsTrigger
-(ui/bar.js), and a frameless panel when embedded (ui/panel.js).
+(ui/bar.js), a frameless panel without its own footer when embedded
+(ui/panel.js), and "week" instead of "wk" for the weekly windows
+(providers/claude.js, providers/codex.js).
+
+mods/token-rank/icons/github.svg is the GitHub mark from Primer Octicons
+(https://github.com/primer/octicons, icons/mark-github-16.svg), released under
+the MIT License, used for the Sign in with GitHub button.

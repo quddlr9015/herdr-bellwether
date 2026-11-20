@@ -4,7 +4,8 @@ const RPC_SOURCE = "codex app-server";
 const DEFAULT_LIMIT = "codex";
 const RPC_REPLY_ID = 2;
 const LONG = { 300: "5-hour", 10080: "Weekly" };
-const SHORT = { 300: "5h", 10080: "wk" };
+// Token Rank: "week" instead of "wk", the word Claude and Codex use for this limit.
+const SHORT = { 300: "5h", 10080: "week" };
 
 function slotWindows(limitId, limitName, slots) {
   const prefix = limitId === "codex" ? null : (limitName || limitId);

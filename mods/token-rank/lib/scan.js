@@ -63,7 +63,8 @@ export function pendingUpload(scan, sent) {
   let commits = 0;
   for (const [day, data] of [...scan.days.entries()].sort(([a], [b]) => b.localeCompare(a))) {
     if (day < oldest) continue;
-    const signature = JSON.stringify(data);
+    // "fam:": bumped when the server starts keeping something new per day, so every day goes up once more.
+    const signature = `fam:${JSON.stringify(data)}`;
     signatures[day] = signature;
     if (!recent.has(day) && sent[day] === signature) continue;
     const room = Math.max(0, MAX_COMMITS_PER_UPLOAD - commits);

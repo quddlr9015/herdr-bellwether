@@ -1,6 +1,6 @@
 import { div } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
-import { COLOR, alpha, avatar, button, caption, rule, toggle } from "./style.js";
+import { avatar, button, caption, githubButton, rule, toggle } from "./style.js";
 
 function setting(id, title, detail, on, onFlip, t) {
   return h_flex().gap(12).items_center()
@@ -28,11 +28,11 @@ export function settingsTab(s, t) {
       .child(setting("tr-commits", "Share my commit count", "Off removes commits you already shared.",
         settings.share_commits, (on, cx) => s.act.changeSetting("share_commits", on, cx), t));
   } else {
-    body.child(v_flex().gap(8).p(12).rounded(10).bg(alpha(COLOR.violet, 0.1))
+    body.child(v_flex().gap(8)
       .child(div().font_semibold().text_color(t.foreground).child("Not signed in"))
-      .child(div().text_size(11).text_color(t.muted).child(
-        "Your usage stays on this machine. Signing in shares daily totals per model, token counts and how many commits you made. Prompts, code, file and repository names never leave."))
-      .child(h_flex().child(button("tr-settings-sign-in", "Sign in with GitHub", s.act.signIn, t, { primary: true }))));
+      .child(div().text_size(11.5).text_color(t.muted).child(
+        "Your usage stays on this Mac. Signing in sends daily totals only: tokens and cost per model, and how many commits you made. Prompts, code, and file or repository names are never sent."))
+      .child(h_flex().child(githubButton("tr-settings-sign-in", "Sign in with GitHub", s.act.signIn))));
   }
   body
     .child(rule(t))

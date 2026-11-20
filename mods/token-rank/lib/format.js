@@ -14,12 +14,6 @@ export function formatUsd(n) {
   return `$${n.toFixed(2)}`;
 }
 
-export function formatMetric(metric, entry) {
-  if (metric === "cost") return formatUsd(entry.cost_usd);
-  if (metric === "tokens") return formatTokens(entry.tokens);
-  return `${entry.commits}`;
-}
-
 export const formatPercent = (share) => `${Math.round(share * 100)}%`;
 
 export function formatAgo(ms) {

@@ -13,7 +13,8 @@ function windowFromLimit(l) {
   const scope = scopeName(l.scope);
   const resetsAt = toEpoch(l.resets_at);
   if (kind === "session") return makeWindow({ id: "session", short: "5h", long: "5-hour", percent: l.percent, resetsAt, durationSec: 5 * HOUR });
-  if (kind === "weekly_all") return makeWindow({ id: "weekly_all", short: "wk", long: "Weekly", percent: l.percent, resetsAt, durationSec: WEEK });
+  // Token Rank: "week" instead of "wk", the word Claude and Codex use for this limit.
+  if (kind === "weekly_all") return makeWindow({ id: "weekly_all", short: "week", long: "Weekly", percent: l.percent, resetsAt, durationSec: WEEK });
   if (kind === "weekly_scoped" && scope) {
     return makeWindow({ id: `weekly_scoped:${scope}`, short: scope, long: `Weekly · ${scope}`, percent: l.percent, resetsAt, durationSec: WEEK });
   }
@@ -27,7 +28,7 @@ function legacyWindows(rl) {
     out.push(makeWindow({ id: "session", short: "5h", long: "5-hour", percent: rl.five_hour.utilization, resetsAt: toEpoch(rl.five_hour.resets_at), durationSec: 5 * HOUR }));
   }
   if (rl.seven_day?.utilization != null) {
-    out.push(makeWindow({ id: "weekly_all", short: "wk", long: "Weekly", percent: rl.seven_day.utilization, resetsAt: toEpoch(rl.seven_day.resets_at), durationSec: WEEK }));
+    out.push(makeWindow({ id: "weekly_all", short: "week", long: "Weekly", percent: rl.seven_day.utilization, resetsAt: toEpoch(rl.seven_day.resets_at), durationSec: WEEK }));
   }
   return out;
 }
@@ -49,7 +50,8 @@ export function parse(text, now) {
 export default {
   id: "claude",
   name: "Claude",
-  icon: "icons/claude.svg",
+  // Token Rank: the official Claude mark (claude.ai favicon) instead of Herdr's Claude Code character.
+  icon: "mods/token-rank/limits/icons/claude.svg",
   helper: "helpers/claude-usage.sh",
   parse,
 };

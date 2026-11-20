@@ -40,9 +40,9 @@ export function heatmap(days, weightOf, t) {
   const values = Array.from({ length: 42 }, (_, i) => addDays(start, i)).map((day) => ({ day, value: day > today ? null : weightOf(day) }));
   const max = Math.max(...values.map((v) => v.value ?? 0), 0) || 1;
   const shade = (value) => {
-    if (value == null) return alpha(COLOR.violet, 0);
+    if (value == null) return alpha(COLOR.accent, 0);
     if (!value) return t.raised;
-    return alpha(COLOR.violet, 0.22 + 0.78 * Math.sqrt(value / max));
+    return alpha(COLOR.accent, 0.22 + 0.78 * Math.sqrt(value / max));
   };
   return h_flex().gap(3).children(Array.from({ length: 6 }, (_, week) =>
     v_flex().gap(3).children(values.slice(week * 7, week * 7 + 7).map(({ day, value }) =>

@@ -1,4 +1,5 @@
 import { div, image, svg } from "gpui-kit";
+import { h_flex } from "gpui-base";
 import { PROVIDERS } from "../providers/index.js";
 import { MOD } from "../lib/mod.js";
 
@@ -18,9 +19,10 @@ export function providerIcon(id, path, color) {
 }
 
 export function levelColor(level, t) {
-  if (level === "hot") return t.ansi1 ?? t.blocked;
-  if (level === "warn") return t.ansi3 ?? t.done;
-  return t.ansi2 ?? t.working;
+  // Token Rank: the Token Rank palette (emerald, gold, crimson) instead of the terminal's ANSI colors.
+  if (level === "hot") return "#C2263D";
+  if (level === "warn") return "#C9962B";
+  return "#0E8A6E";
 }
 
 export function sessionNumberColor(level, text, t) {
@@ -30,10 +32,19 @@ export function sessionNumberColor(level, text, t) {
 
 export const limitNumberColor = (level, text, t) => (text === NO_READING ? t.dim : levelColor(level, t));
 
+// Token Rank: a segmented meter. Lit segments show the share used; the segment
+// at the pace mark (how much of the window has passed) stands taller.
+const SEGMENT_W = 3;
+const SEGMENT_GAP = 1.5;
+
 export function usageBar(width, fill, tick, color, t) {
-  return div().relative().w(width).h(4).rounded(2).bg(t.border).flex_none()
-    .child(div().absolute().left(0).top(0).h(4).rounded(2).w(Math.round(width * fill)).bg(color))
-    .when(tick != null, (b) => b.child(div().absolute().top(-2).left(Math.round(width * tick)).w(1).h(8).bg(t.foreground).opacity(0.75)));
+  const count = Math.max(5, Math.round((width + SEGMENT_GAP) / (SEGMENT_W + SEGMENT_GAP)));
+  const lit = fill > 0 ? Math.max(1, Math.round(fill * count)) : 0;
+  const paceAt = tick == null ? null : Math.min(count - 1, Math.floor(tick * count));
+  return h_flex().h(10).gap(SEGMENT_GAP).items_center().flex_none().children(Array.from({ length: count }, (_, i) =>
+    div().w(SEGMENT_W).h(i === paceAt ? 10 : 6).rounded(1)
+      .bg(i < lit ? color : t.border)
+      .when(i === paceAt && i >= lit, (e) => e.bg(t.muted))));
 }
 
 export const divider = (t) => div().w(1).h(14).bg(t.border).flex_none();
