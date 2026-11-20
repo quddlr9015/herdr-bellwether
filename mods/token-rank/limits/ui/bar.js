@@ -36,7 +36,8 @@ function sessionNumbers(numbers, t) {
     .children(numbers.map((n) => div().whitespace_nowrap().text_color(sessionNumberColor(n.level, n.text, t)).child(n.text)));
 }
 
-function limitsTrigger({ model, numbers, density, onHover }, t) {
+// Token Rank: exported so Token Rank can place it in its own bar.
+export function limitsTrigger({ model, numbers, density, onHover }, t) {
   const content = h_flex().id("ul-content").gap(14).items_center().flex_none().on_hover(onHover);
   if (numbers.length) {
     content.child(sessionNumbers(numbers, t));

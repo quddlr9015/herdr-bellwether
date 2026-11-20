@@ -1,5 +1,6 @@
 import { View } from "gpui-kit";
-import { appHome, checking, exec, home, nextCommand, notify, props, readTextFile, spaces, theme, writeTextFile } from "herdr";
+import { appHome, checking, exec, home, nextCommand, notify, props, readTextFile, run, spaces, theme, writeTextFile } from "herdr";
+import { h_flex } from "gpui-base";
 import { ApiError, request } from "./lib/api.js";
 import { anchorDay, periodLabel, periodRange, todayUtc } from "./lib/dates.js";
 import { commits, formatTokens, formatUsd } from "./lib/format.js";
@@ -8,6 +9,7 @@ import { buildDays, dayOf, lastDays, sumRange } from "./lib/stats.js";
 import { statusBar } from "./ui/bar.js";
 import { rankPanel } from "./ui/panel.js";
 import UsageLimits from "./limits/main.js";
+import { limitsTrigger } from "./limits/ui/bar.js";
 
 const MOD = "token-rank";
 const SCAN_EVERY_MS = 10 * 60 * 1000;
@@ -17,6 +19,8 @@ const GITHUB_DEVICE_URL = "https://github.com/login/device";
 const AVATAR_PREFIX = "https://avatars.githubusercontent.com/";
 const AVATARS_PER_BOARD = 40;
 const REPO_URL = "https://github.com/quddlr9015/herdr-token-rank";
+// Room the Token Rank numbers take at the right of the bar; the plan limits get the rest.
+const TOKEN_RANK_BAR_W = 230;
 
 const message = (error) => (error instanceof Error ? error.message : String(error));
 const parseJson = (text, fallback) => {
@@ -37,7 +41,9 @@ export default class TokenRank extends View {
     };
     this.files = { auth: null, sent: null, pricing: null };
     this.helper = `${appHome()}/mods/${MOD}/helpers/scan.sh`;
-    this.tab = "usage";
+    // role "panel": the whole panel in a tab (`token-rank:open`) instead of a status-bar block.
+    this.role = props()?.role === "panel" ? "panel" : "bar";
+    this.tab = props()?.tab ?? "overview";
     this.period = "week";
     this.metric = "cost";
     this.offset = 0;
@@ -59,9 +65,12 @@ export default class TokenRank extends View {
     this.avatarQueue = [];
     this.avatarBusy = false;
     this.act = this.actions();
+    this.barWidth = 0;
     if (checking()) return;
-    // Plan limits exactly as the usage-limits mod shows them, drawn by its own view.
-    this.limits = cx.new(UsageLimits, { border: false });
+    // Plan limits exactly as the usage-limits mod shows them. This view owns the
+    // instance, so its bar segments and panel land in Token Rank's bar and panel.
+    this.limits = new UsageLimits({});
+    this.limits.init({ border: false }, cx);
     cx.spawn(async (later) => {
       await this.loadFiles();
       later.notify();
@@ -71,10 +80,11 @@ export default class TokenRank extends View {
     cx.timer.every(SCAN_EVERY_MS, (later) => later.spawn((task) => this.sync(task)));
     // Commands for keys.json ("token-rank:refresh") or `herdr-app do token-rank.refresh`.
     cx.spawn(async (later) => {
-      const commands = { refresh: this.act.refresh, "sign-in": this.act.signIn, "sign-out": this.act.signOut };
+      const commands = { refresh: this.act.refresh, "sign-in": this.act.signIn, "sign-out": this.act.signOut, open: this.act.openTab };
       for (;;) {
         const command = commands[await nextCommand()];
-        if (command && (command !== this.act.signIn || !this.auth)) command(later);
+        // Every shown copy hears a command; only the status-bar copy acts on it.
+        if (command && this.role === "bar" && (command !== this.act.signIn || !this.auth)) command(later);
       }
     });
   }
@@ -141,6 +151,9 @@ export default class TokenRank extends View {
       if (scan) {
         this.scan = scan;
         this.scannedAt = Date.now();
+      } else if (!this.scan) {
+        // Another copy is scanning; read its result shortly instead of waiting ten minutes.
+        cx.timer.after(20 * 1000, (later) => later.spawn((task) => this.sync(task)));
       }
       this.scanError = null;
     } catch (error) {
@@ -203,6 +216,7 @@ export default class TokenRank extends View {
       const token = this.auth.token;
       loads.push(this.fetchCached(`me:${query}`, () => request("GET", `/v1/me?${query}`, { token }), force));
       loads.push(this.fetchCached("me:today", () => request("GET", `/v1/me?period=day&metric=cost&date=${todayUtc()}`, { token }), force));
+      loads.push(this.fetchCached("me:week", () => request("GET", `/v1/me?period=week&metric=cost&date=${todayUtc()}`, { token }), force));
     }
     if (this.viewing) {
       const login = this.viewing;
@@ -289,7 +303,7 @@ export default class TokenRank extends View {
   summary() {
     const week = periodRange("week", todayUtc());
     const total = sumRange(this.days, week.from, week.to);
-    const mine = this.cache[`me:period=week&metric=cost&date=${todayUtc()}`]?.data;
+    const mine = this.cache["me:week"]?.data;
     const amount = this.pricing ? `${formatUsd(total.cost)} · ${formatTokens(total.tokens)} tokens` : `${formatTokens(total.tokens)} tokens`;
     const rank = mine?.rank ? ` · #${mine.rank} on Token Rank` : "";
     return `My AI coding this week: ${amount} · ${commits(total.commits)}${rank}. Herdr mod: ${REPO_URL}`;
@@ -302,7 +316,13 @@ export default class TokenRank extends View {
     };
     return {
       hover: (hovered, cx) => {
+        this.limits?.act.hover(hovered, cx);
         if (hovered) cx.spawn((task) => this.refresh(task));
+      },
+      resize: (size, cx) => {
+        if (size.width === this.barWidth) return;
+        this.barWidth = size.width;
+        cx.notify();
       },
       pickTab: (tab, cx) => {
         this.tab = tab;
@@ -331,6 +351,7 @@ export default class TokenRank extends View {
         cx.notify();
       },
       openGitHubProfile: (login, cx) => cx.open_url(`https://github.com/${login}`),
+      openTab: () => run("tab.new", { name: "Token Rank", mod: MOD, props: { role: "panel" } }),
       refresh: (cx) => cx.spawn((task) => this.sync(task)),
       signIn: (cx) => {
         this.notice = null;
@@ -400,8 +421,9 @@ export default class TokenRank extends View {
     return { rank, today, accent: true, spark };
   }
 
-  render(_cx) {
+  render(cx) {
     const t = theme();
+    const limits = this.limits?.parts(cx, Math.max(0, this.barWidth - TOKEN_RANK_BAR_W)) ?? null;
     const date = this.anchor();
     const query = `period=${this.period}&metric=${this.metric}&date=${date}`;
     const boardEntry = this.cache[`board:${query}`];
@@ -409,6 +431,8 @@ export default class TokenRank extends View {
     const panel = rankPanel({
       act: this.act,
       tab: this.tab,
+      limitsPanel: limits?.panel ?? null,
+      weekStanding: this.cache["me:week"]?.data ?? null,
       days: this.days,
       priced: Boolean(this.pricing),
       pricingVersion: this.pricing?.version ?? null,
@@ -436,6 +460,16 @@ export default class TokenRank extends View {
       scannedAt: this.scannedAt,
       scanError: this.scanError,
     }, t);
-    return statusBar({ ...this.bar(), limits: this.limits ?? null, onHover: this.act.hover, panel, border: props()?.border }, t);
+    if (this.role === "panel") {
+      return h_flex().id("root").size_full().justify_center().items_start().p(16).bg(t.canvas).overflow_hidden().child(panel);
+    }
+    return statusBar({
+      ...this.bar(),
+      limits: limits ? limitsTrigger({ ...limits.bar, onHover: () => {} }, t) : null,
+      onHover: this.act.hover,
+      onResize: this.act.resize,
+      panel,
+      border: props()?.border,
+    }, t);
   }
 }

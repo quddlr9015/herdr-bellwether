@@ -4,8 +4,10 @@ Codex logs come from AI Token Monitor by soulduse
 
 mods/token-rank/limits is herdr-usage-limits by Anton Nozikov
 (https://github.com/nozikov/herdr-usage-limits, commit 7ea49bb), released under
-the MIT License (mods/token-rank/limits/LICENSE). Token Rank renders it as a
-child view in its status bar. Changes, each marked "Token Rank:" in the source:
-the asset/helper path constant (lib/mod.js), its shared-state keys
-(actions.js, lib/session-binding.js), and reading props from the parent view
-with the usage-limits preferences as a fallback (main.js).
+the MIT License (mods/token-rank/limits/LICENSE). Token Rank owns one instance of
+its view and places its bar segments and panel inside Token Rank's own bar and
+panel. Changes, each marked "Token Rank:" in the source: the asset/helper path
+constant (lib/mod.js), its shared-state keys (actions.js,
+lib/session-binding.js), props from the owner with the usage-limits preferences
+as a fallback and a parts() method (main.js), an exported limitsTrigger
+(ui/bar.js), and a frameless panel when embedded (ui/panel.js).

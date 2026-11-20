@@ -9,6 +9,8 @@ const SESSION_BAR_W = 60;
 
 export function panelShell(panel) {
   const { t, act } = panel;
+  // Token Rank: inside Token Rank's panel there is no frame of its own.
+  if (panel.embedded) return v_flex().id("ul-panel-body").gap(10).on_hover((on, cx) => act.hoverPanel(on, cx));
   return v_flex().id("ul-panel-body").w(PANEL_W).p(12).gap(10).rounded(8).border(1).border_color(t.border).bg(t.popover).shadow_lg()
     .text_size(12).text_color(t.foreground)
     .on_hover((on, cx) => act.hoverPanel(on, cx));

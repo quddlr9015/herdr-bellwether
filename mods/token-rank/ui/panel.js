@@ -1,16 +1,17 @@
 import { div, svg } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
 import { rankingTab } from "./ranking.js";
+import { overviewTab } from "./overview.js";
 import { settingsTab } from "./settings.js";
 import { COLOR, down, rule } from "./style.js";
 import { usageTab } from "./usage.js";
 import { formatAgo } from "../lib/format.js";
 
 const PANEL_W = 420;
-const TABS = [["usage", "Usage"], ["ranking", "Ranking"], ["settings", "Settings"]];
+const TABS = [["overview", "Overview"], ["usage", "Usage"], ["ranking", "Ranking"], ["settings", "Settings"]];
 
 function tabs(s, t) {
-  return h_flex().gap(14).children(TABS.map(([value, label]) => {
+  return h_flex().gap(12).children(TABS.map(([value, label]) => {
     const on = value === s.tab;
     return v_flex().id(`tr-tab-${value}`).gap(4).cursor_pointer().on_click((_e, cx) => s.act.pickTab(value, cx))
       .child(div().text_color(on ? t.foreground : t.muted).when(on, (e) => e.font_semibold()).hover((st) => st.text_color(t.foreground)).child(label))
@@ -31,7 +32,8 @@ function footer(s, t) {
 
 export function rankPanel(s, t) {
   let body;
-  if (s.tab === "ranking") body = rankingTab(s, t);
+  if (s.tab === "overview") body = overviewTab(s, t);
+  else if (s.tab === "ranking") body = rankingTab(s, t);
   else if (s.tab === "settings") body = settingsTab(s, t);
   else body = usageTab(s, t);
   return v_flex().id("tr-panel-body").w(PANEL_W).p(12).gap(12).rounded(12).border(1).border_color(t.border).bg(t.popover).shadow_lg()

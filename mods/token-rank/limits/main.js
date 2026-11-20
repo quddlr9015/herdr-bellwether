@@ -119,7 +119,7 @@ export default class UsageLimits extends View {
     for (const p of want) this.fetch(p, cx);
   }
 
-  drawPanel(t, prefs) {
+  drawPanel(t, prefs, embedded = false) {
     const st = states();
     const panel = cardModel(st, nowS(), PROVIDERS, prefs);
     const session = inPanel(prefs, "session") ? sessionView(this.session?.data, this.session?.title) : null;
@@ -128,8 +128,28 @@ export default class UsageLimits extends View {
     const draw = {
       t, act: this.act, prefs, hovered: this.hovered, cooling: refreshCooling(),
       choosing: this.sessionChoosing, choices: this.sessionChoices, manual: this.sessionManual,
+      embedded,
     };
     return this.panel === PANEL.SETTINGS ? settingsPanel(!empty, st, draw) : limitsPanel(panel, session, draw);
+  }
+
+  /**
+   * Token Rank: what render() draws, as separate pieces for Token Rank's bar and
+   * panel. Token Rank owns this instance and calls init/parts itself.
+   */
+  parts(cx, width) {
+    this.width = width;
+    const prefs = this.prefs();
+    this.followFocus(cx, prefs);
+    this.fetchNewlyWanted(cx, prefs);
+    const t = theme();
+    const model = barModel(states(), prefs, nowS());
+    const numbers = sessionOnBar(this.session?.data, prefs);
+    const room = width ? width - BAR_PADDING_W - sessionNumbersWidth(numbers) : Infinity;
+    return {
+      bar: { model, numbers, density: chooseDensity(model, room, prefs.showBars) },
+      panel: this.drawPanel(t, prefs, true),
+    };
   }
 
   render(cx) {

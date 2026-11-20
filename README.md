@@ -2,10 +2,11 @@
 
 A Herdr mod that shows your AI plan limits and coding spend in the status bar and ranks it against other Herdr users.
 
-The left part of the block is [herdr-usage-limits](https://github.com/nozikov/herdr-usage-limits), bundled unchanged in look and behavior: each provider's icon with its 5-hour, weekly and per-model limits as bars with a pace mark and a percentage, and its own hover panel with reset times, session context and settings. The right part is Token Rank: today's estimated cost, a seven-day sparkline and your rank.
+Everything is in one block with one hover panel. The left part of the block is [herdr-usage-limits](https://github.com/nozikov/herdr-usage-limits), bundled with the same look: each provider's icon with its 5-hour, weekly and per-model limits as bars with a pace mark and a percentage. The right part is Token Rank: today's estimated cost, a seven-day sparkline and your rank.
 
-Token Rank reads the session logs Claude Code and Codex already write on your machine, prices every request per model, counts the commits you made in the repositories your agents worked in, and puts it all in a hover panel with three tabs:
+Token Rank reads the session logs Claude Code and Codex already write on your machine, prices every request per model, counts the commits you made in the repositories your agents worked in, and puts it all in a hover panel with four tabs:
 
+- **Overview**: the plan limits panel from usage-limits (this session's context, every limit with its pace and time to reset, its refresh and settings), then today's and this week's cost and your weekly rank.
 - **Usage**: today, this week and this month; the last 30 days split by Claude and Codex; your top models; a six-week activity map and your streak. Works without signing in, and nothing leaves your machine until you do.
 - **Ranking**: daily, weekly and monthly leaderboards by cost, tokens or commits, with medals, rank changes against the previous period, past periods, and a profile for every listed user.
 - **Settings**: GitHub sign-in, whether you are listed, whether commit counts are shared, a weekly summary to paste anywhere, and deleting your data.
@@ -27,7 +28,7 @@ Token Rank reads the session logs Claude Code and Codex already write on your ma
 
 The status bar shows today's cost and a seven-day sparkline as soon as the first scan finishes. Hover it, open **Ranking** and choose **Sign in with GitHub** to join.
 
-Optional keys (`keys.json`): `"token-rank:refresh"`, `"token-rank:sign-in"`, `"token-rank:sign-out"`. The same commands run from a shell with `herdr-app do token-rank.refresh`.
+Optional keys (`keys.json`): `"token-rank:open"` (the same panel in a tab), `"token-rank:refresh"`, `"token-rank:sign-in"`, `"token-rank:sign-out"`. The same commands run from a shell with `herdr-app do token-rank.open`.
 
 Requirements: macOS or Linux, `git`, `curl`, `sh` and `awk`. [ripgrep](https://github.com/BurntSushi/ripgrep) is used when it is installed and makes the first scan of a large history much faster. Plan limits come from the installed `claude` and `codex` CLIs, as described in [herdr-usage-limits](https://github.com/nozikov/herdr-usage-limits#readme).
 
