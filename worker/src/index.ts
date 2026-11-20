@@ -19,6 +19,12 @@ async function limit(limiter: RateLimiter, key: string): Promise<void> {
 
 const clientIp = (request: Request) => request.headers.get("cf-connecting-ip") ?? "unknown";
 
+/** Signed-in endpoints: an IP limit first, so made-up tokens cannot hammer the session lookup. */
+async function signedIn(request: Request, env: Env, nowMs: number) {
+  await limit(env.READ_LIMITER, clientIp(request));
+  return requireUser(request, env, nowMs);
+}
+
 /** period, metric and date query parameters, defaulting to today's daily cost ranking. */
 function rankingQuery(url: URL, nowMs: number) {
   const kind = (url.searchParams.get("period") ?? "day") as PeriodKind;
@@ -71,27 +77,26 @@ async function route(request: Request, env: Env, ctx: ExecutionContext): Promise
     }
 
     case "POST /v1/auth/logout": {
-      const user = await requireUser(request, env, nowMs);
+      const user = await signedIn(request, env, nowMs);
       await endSession(env, user);
       return json({ ok: true });
     }
 
     case "GET /v1/me": {
-      const user = await requireUser(request, env, nowMs);
-      await limit(env.READ_LIMITER, `user:${user.id}`);
+      const user = await signedIn(request, env, nowMs);
       const { kind, metric, day } = rankingQuery(url, nowMs);
       const mine = await standing(env, user.id, kind, metric, day);
       return json({ user: { login: user.login, avatar_url: user.avatar_url }, ...mine });
     }
 
     case "DELETE /v1/me": {
-      const user = await requireUser(request, env, nowMs);
+      const user = await signedIn(request, env, nowMs);
       await deleteAccount(env, user);
       return json({ ok: true });
     }
 
     case "POST /v1/usage": {
-      const user = await requireUser(request, env, nowMs);
+      const user = await signedIn(request, env, nowMs);
       await limit(env.WRITE_LIMITER, `user:${user.id}`);
       const upload = parseUpload(await readJson(request, MAX_UPLOAD_BYTES), nowMs);
       return json({ ok: true, ...(await saveUpload(env, user.id, upload, nowMs)) });
