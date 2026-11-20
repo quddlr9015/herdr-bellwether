@@ -9,7 +9,7 @@ const UPLOAD_DAYS = 39;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const TOKEN_FIELDS = ["input", "cache_read", "cache_write_5m", "cache_write_1h", "output"];
 
-export const todayUtc = () => new Date().toISOString().slice(0, 10);
+const todayUtc = () => new Date().toISOString().slice(0, 10);
 
 const utcDaysAgo = (days) => new Date(Date.now() - days * DAY_MS).toISOString().slice(0, 10);
 
@@ -50,10 +50,6 @@ export async function runScan(helper, stateDir, repoFolders) {
   if (result.code !== 0) throw new Error(result.stderr.trim().split("\n").pop() || `scan exited with ${result.code}`);
   return parseScan(result.stdout);
 }
-
-const rowTokens = (row) => TOKEN_FIELDS.reduce((sum, field) => sum + row[field], 0);
-
-export const dayTokens = (day) => (day ? day.usage.reduce((sum, row) => sum + rowTokens(row), 0) : 0);
 
 /**
  * The days to send: today and yesterday always (they are still growing), older

@@ -8,7 +8,7 @@ import type { Upload } from "./validate";
  * Stores one machine's day totals and refreshes the user's day/week/month totals,
  * all in one D1 batch (a single transaction). Uploading the same data again changes nothing.
  */
-export async function saveUpload(env: Env, userId: number, upload: Upload, nowMs: number) {
+export async function saveUpload(env: Env, userId: number, shareCommits: boolean, upload: Upload, nowMs: number) {
   const dayTotals = upload.days.map(({ day, rows }) => {
     const tokens = rows.reduce((sum, row) => sum + totalTokens(row), 0);
     const cost = Math.round(rows.reduce((sum, row) => sum + costMicros(row, day), 0));
@@ -16,9 +16,10 @@ export async function saveUpload(env: Env, userId: number, upload: Upload, nowMs
   });
 
   const key = await hmacKey(env.COMMIT_MARK_KEY);
+  // Commits are ignored for accounts that turned commit sharing off.
   const marks = await Promise.all(
-    upload.days.flatMap(({ day, commits }) =>
-      commits.map(async (commit) => [(await hmacHex(key, `${userId}:${commit}`)).slice(0, 32), day] as const),
+    upload.days.flatMap(({ day, commits }) => (shareCommits ? commits : []).map(async (commit) =>
+      [(await hmacHex(key, `${userId}:${commit}`)).slice(0, 32), day] as const),
     ),
   );
 

@@ -13,6 +13,8 @@ export interface SessionUser {
   id: number;
   login: string;
   avatar_url: string | null;
+  listed: boolean;
+  share_commits: boolean;
   tokenHash: string;
 }
 
@@ -126,15 +128,43 @@ export async function requireUser(request: Request, env: Env, nowMs: number): Pr
   if (!match?.[1]) throw new HttpError(401, "unauthorized");
   const tokenHash = await sha256Hex(match[1]);
   const row = await env.DB.prepare(
-    `SELECT s.expires_at, u.id, u.login, u.avatar_url FROM sessions s JOIN users u ON u.id = s.user_id
+    `SELECT s.expires_at, u.id, u.login, u.avatar_url, u.listed, u.share_commits FROM sessions s JOIN users u ON u.id = s.user_id
      WHERE s.token_hash = ?1`,
-  ).bind(tokenHash).first<{ expires_at: number; id: number; login: string; avatar_url: string | null }>();
+  ).bind(tokenHash).first<{ expires_at: number; id: number; login: string; avatar_url: string | null; listed: number; share_commits: number }>();
   if (!row || row.expires_at <= nowMs) throw new HttpError(401, "unauthorized");
   if (row.expires_at - nowMs < RENEW_WITHIN_DAYS * DAY_MS) {
     await env.DB.prepare("UPDATE sessions SET expires_at = ?2 WHERE token_hash = ?1")
       .bind(tokenHash, nowMs + SESSION_DAYS * DAY_MS).run();
   }
-  return { id: row.id, login: row.login, avatar_url: row.avatar_url, tokenHash };
+  return {
+    id: row.id,
+    login: row.login,
+    avatar_url: row.avatar_url,
+    listed: row.listed === 1,
+    share_commits: row.share_commits === 1,
+    tokenHash,
+  };
+}
+
+/** Applies the owner's settings. Turning commit sharing off forgets the commits already sent. */
+export async function updateSettings(env: Env, user: SessionUser, body: unknown, nowMs: number) {
+  const { listed, share_commits: shareCommits } = (body ?? {}) as { listed?: unknown; share_commits?: unknown };
+  if ((listed !== undefined && typeof listed !== "boolean") || (shareCommits !== undefined && typeof shareCommits !== "boolean")) {
+    throw new HttpError(400, "bad_settings", "listed and share_commits must be booleans.");
+  }
+  const next = { listed: listed ?? user.listed, share_commits: shareCommits ?? user.share_commits };
+  const statements = [
+    env.DB.prepare("UPDATE users SET listed = ?2, share_commits = ?3, updated_at = ?4 WHERE id = ?1")
+      .bind(user.id, next.listed ? 1 : 0, next.share_commits ? 1 : 0, nowMs),
+  ];
+  if (!next.share_commits) {
+    statements.push(
+      env.DB.prepare("DELETE FROM commit_marks WHERE user_id = ?1").bind(user.id),
+      env.DB.prepare("UPDATE period_totals SET commits = 0, updated_at = ?2 WHERE user_id = ?1").bind(user.id, nowMs),
+    );
+  }
+  await env.DB.batch(statements);
+  return next;
 }
 
 export async function endSession(env: Env, user: SessionUser): Promise<void> {

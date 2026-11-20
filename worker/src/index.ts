@@ -1,16 +1,19 @@
-import { deleteAccount, endSession, pollDeviceFlow, requireUser, startDeviceFlow } from "./auth";
+import { deleteAccount, endSession, pollDeviceFlow, requireUser, startDeviceFlow, updateSettings } from "./auth";
 import { DAY_MS, dayStartMs, type PeriodKind, utcDay } from "./dates";
 import type { Env, RateLimiter } from "./env";
 import { HttpError, errorResponse, json, readJson } from "./http";
-import { METRICS, type Metric, leaderboard, standing } from "./leaderboard";
-import { PRICING_VERSION } from "./pricing";
+import { METRICS, type Metric, leaderboard, profile, standing } from "./leaderboard";
+import { PRICING, PRICING_VERSION } from "./pricing";
 import { saveUpload } from "./usage";
 import { parseUpload } from "./validate";
 
 const MAX_UPLOAD_BYTES = 512 * 1024;
-const LEADERBOARD_TTL_S = 60;
+const PUBLIC_TTL_S = 60;
+const PRICING_TTL_S = 60 * 60;
 const HISTORY_DAYS = 400;
 const PERIOD_KINDS: readonly PeriodKind[] = ["day", "week", "month"];
+const PROFILE_PATH = /^\/v1\/users\/([A-Za-z0-9-]{1,39})$/;
+const KNOWN_PATHS = ["/v1/health", "/v1/pricing", "/v1/leaderboard", "/v1/auth/device", "/v1/auth/token", "/v1/auth/logout", "/v1/me", "/v1/usage"];
 
 async function limit(limiter: RateLimiter, key: string): Promise<void> {
   const { success } = await limiter.limit({ key });
@@ -37,17 +40,20 @@ function rankingQuery(url: URL, nowMs: number) {
   return { kind, metric, day };
 }
 
-/** Leaderboards are public and identical for everyone, so they are cached at the edge for a minute. */
-async function cachedLeaderboard(request: Request, env: Env, ctx: ExecutionContext, url: URL, nowMs: number) {
-  const { kind, metric, day } = rankingQuery(url, nowMs);
-  const cacheKey = new Request(`${url.origin}/v1/leaderboard?period=${kind}&metric=${metric}&date=${day}`);
-  const cache = caches.default;
-  const hit = await cache.match(cacheKey);
+/**
+ * Public answers are identical for everyone, so they are cached at the edge.
+ * Only a cache miss counts against the caller's read limit.
+ */
+async function cachedPublic(request: Request, env: Env, ctx: ExecutionContext, cacheUrl: string, ttlS: number, produce: () => Promise<Response>) {
+  const cacheKey = new Request(cacheUrl);
+  const hit = await caches.default.match(cacheKey);
   if (hit) return hit;
   await limit(env.READ_LIMITER, clientIp(request));
-  const body = { ...(await leaderboard(env, kind, metric, day)), generated_at: new Date(nowMs).toISOString() };
-  const response = json(body, 200, { "cache-control": `public, max-age=${LEADERBOARD_TTL_S}` });
-  ctx.waitUntil(cache.put(cacheKey, response.clone()));
+  const response = await produce();
+  if (response.ok) {
+    response.headers.set("cache-control", `public, max-age=${ttlS}`);
+    ctx.waitUntil(caches.default.put(cacheKey, response.clone()));
+  }
   return response;
 }
 
@@ -60,8 +66,15 @@ async function route(request: Request, env: Env, ctx: ExecutionContext): Promise
     case "GET /v1/health":
       return json({ ok: true, pricing_version: PRICING_VERSION });
 
-    case "GET /v1/leaderboard":
-      return cachedLeaderboard(request, env, ctx, url, nowMs);
+    case "GET /v1/pricing":
+      return cachedPublic(request, env, ctx, `${url.origin}/v1/pricing?v=${PRICING_VERSION}`, PRICING_TTL_S, async () => json(PRICING));
+
+    case "GET /v1/leaderboard": {
+      const { kind, metric, day } = rankingQuery(url, nowMs);
+      const cacheUrl = `${url.origin}/v1/leaderboard?period=${kind}&metric=${metric}&date=${day}`;
+      return cachedPublic(request, env, ctx, cacheUrl, PUBLIC_TTL_S, async () =>
+        json({ ...(await leaderboard(env, kind, metric, day)), generated_at: new Date(nowMs).toISOString() }));
+    }
 
     case "POST /v1/auth/device": {
       await limit(env.AUTH_LIMITER, clientIp(request));
@@ -86,7 +99,17 @@ async function route(request: Request, env: Env, ctx: ExecutionContext): Promise
       const user = await signedIn(request, env, nowMs);
       const { kind, metric, day } = rankingQuery(url, nowMs);
       const mine = await standing(env, user.id, kind, metric, day);
-      return json({ user: { login: user.login, avatar_url: user.avatar_url }, ...mine });
+      return json({
+        user: { login: user.login, avatar_url: user.avatar_url },
+        settings: { listed: user.listed, share_commits: user.share_commits },
+        ...mine,
+      });
+    }
+
+    case "PATCH /v1/me": {
+      const user = await signedIn(request, env, nowMs);
+      await limit(env.WRITE_LIMITER, `user:${user.id}`);
+      return json({ settings: await updateSettings(env, user, await readJson(request, 1024), nowMs) });
     }
 
     case "DELETE /v1/me": {
@@ -99,12 +122,20 @@ async function route(request: Request, env: Env, ctx: ExecutionContext): Promise
       const user = await signedIn(request, env, nowMs);
       await limit(env.WRITE_LIMITER, `user:${user.id}`);
       const upload = parseUpload(await readJson(request, MAX_UPLOAD_BYTES), nowMs);
-      return json({ ok: true, ...(await saveUpload(env, user.id, upload, nowMs)) });
+      return json({ ok: true, ...(await saveUpload(env, user.id, user.share_commits, upload, nowMs)) });
     }
   }
 
-  const known = ["/v1/health", "/v1/leaderboard", "/v1/auth/device", "/v1/auth/token", "/v1/auth/logout", "/v1/me", "/v1/usage"];
-  if (known.includes(url.pathname)) throw new HttpError(405, "method_not_allowed");
+  const login = PROFILE_PATH.exec(url.pathname)?.[1];
+  if (login && request.method === "GET") {
+    const cacheUrl = `${url.origin}/v1/users/${login.toLowerCase()}?day=${utcDay(nowMs)}`;
+    return cachedPublic(request, env, ctx, cacheUrl, PUBLIC_TTL_S, async () => {
+      const found = await profile(env, login, nowMs);
+      if (!found) throw new HttpError(404, "not_found", "No public profile with that login.");
+      return json(found);
+    });
+  }
+  if (KNOWN_PATHS.includes(url.pathname) || login) throw new HttpError(405, "method_not_allowed");
   throw new HttpError(404, "not_found");
 }
 
