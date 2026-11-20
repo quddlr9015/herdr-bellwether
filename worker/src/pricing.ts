@@ -27,3 +27,9 @@ export const normalizeModel = (model: string): string => shared.normalizeModel(m
 export const costMicros = (row: UsageRow, day: string): number => shared.costMicros(PRICING, row, day);
 
 export const totalTokens = (row: UsageRow): number => shared.totalTokens(row);
+
+export const FAMILIES = ["claude", "codex"] as const;
+export type Family = (typeof FAMILIES)[number];
+
+/** By the model's maker, as the mod's charts split it: a Claude model run through Codex is Claude. */
+export const modelFamily = (row: UsageRow): Family => shared.modelFamily(row.provider, row.model) as Family;

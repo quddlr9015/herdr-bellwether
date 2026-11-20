@@ -1,8 +1,22 @@
 import { hmacHex, hmacKey } from "./crypto";
 import { periodsTouching } from "./dates";
 import type { Env } from "./env";
-import { costMicros, totalTokens } from "./pricing";
-import type { Upload } from "./validate";
+import { FAMILIES, costMicros, modelFamily, totalTokens } from "./pricing";
+import type { Upload, UploadDay } from "./validate";
+
+/** A day's tokens and cost per model family, families with no usage left out. */
+export function familyTotals({ day, rows }: UploadDay) {
+  const byFamily = new Map<string, { tokens: number; cost: number }>();
+  for (const row of rows) {
+    const family = modelFamily(row);
+    const total = byFamily.get(family) ?? { tokens: 0, cost: 0 };
+    total.tokens += totalTokens(row);
+    total.cost += costMicros(row, day);
+    byFamily.set(family, total);
+  }
+  return FAMILIES.filter((family) => byFamily.has(family))
+    .map((family) => [day, family, byFamily.get(family)!.tokens, Math.round(byFamily.get(family)!.cost)] as const);
+}
 
 /**
  * Stores one machine's day totals and refreshes the user's day/week/month totals,
@@ -23,7 +37,10 @@ export async function saveUpload(env: Env, userId: number, shareCommits: boolean
     ),
   );
 
-  const periods = periodsTouching(upload.days.map(({ day }) => day)).map((p) => [p.key, p.from, p.to]);
+  const touched = periodsTouching(upload.days.map(({ day }) => day));
+  const periods = touched.map((p) => [p.key, p.from, p.to]);
+  const familyPeriods = touched.flatMap((p) => FAMILIES.map((family) => [`${family}:${p.key}`, family, p.from, p.to]));
+  const familyDays = upload.days.flatMap(familyTotals);
 
   await env.DB.batch([
     env.DB.prepare(
@@ -51,6 +68,26 @@ export async function saveUpload(env: Env, userId: number, shareCommits: boolean
          tokens = excluded.tokens, cost_micros = excluded.cost_micros,
          commits = excluded.commits, updated_at = excluded.updated_at`,
     ).bind(userId, nowMs, JSON.stringify(periods)),
+    // Family rows: the uploaded days are replaced whole, so a family that vanished from a day drops out.
+    env.DB.prepare(
+      `DELETE FROM device_family_days WHERE user_id = ?1 AND device_id = ?2 AND day IN (SELECT value FROM json_each(?3))`,
+    ).bind(userId, upload.deviceId, JSON.stringify(upload.days.map(({ day }) => day))),
+    env.DB.prepare(
+      `INSERT INTO device_family_days (user_id, device_id, day, family, tokens, cost_micros, updated_at)
+       SELECT ?1, ?2, d.value ->> '$[0]', d.value ->> '$[1]', d.value ->> '$[2]', d.value ->> '$[3]', ?3 FROM json_each(?4) AS d`,
+    ).bind(userId, upload.deviceId, nowMs, JSON.stringify(familyDays)),
+    env.DB.prepare(
+      `INSERT INTO period_totals (period, user_id, tokens, cost_micros, commits, updated_at)
+       SELECT p.value ->> '$[0]', ?1,
+         COALESCE((SELECT SUM(f.tokens) FROM device_family_days f WHERE f.user_id = ?1 AND f.family = p.value ->> '$[1]'
+                   AND f.day BETWEEN p.value ->> '$[2]' AND p.value ->> '$[3]'), 0),
+         COALESCE((SELECT SUM(f.cost_micros) FROM device_family_days f WHERE f.user_id = ?1 AND f.family = p.value ->> '$[1]'
+                   AND f.day BETWEEN p.value ->> '$[2]' AND p.value ->> '$[3]'), 0),
+         0, ?2
+       FROM json_each(?3) AS p WHERE true
+       ON CONFLICT (period, user_id) DO UPDATE SET
+         tokens = excluded.tokens, cost_micros = excluded.cost_micros, updated_at = excluded.updated_at`,
+    ).bind(userId, nowMs, JSON.stringify(familyPeriods)),
   ]);
 
   return { days: dayTotals.length, commits: marks.length, periods: periods.length };

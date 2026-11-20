@@ -3,6 +3,7 @@ import { periodOf, periodsTouching } from "../src/dates";
 import { HttpError } from "../src/http";
 import { type UsageRow, costMicros, normalizeModel, totalTokens } from "../src/pricing";
 import pricing from "../src/pricing.json";
+import { familyTotals } from "../src/usage";
 import { parseUpload } from "../src/validate";
 
 const MILLION = 1_000_000;
@@ -87,5 +88,27 @@ describe("upload validation", () => {
     ["a repeated day", { ...good, days: [good.days[0], good.days[0]] }],
   ])("rejects %s", (_name, body) => {
     expect(() => parseUpload(body, now)).toThrow(HttpError);
+  });
+});
+
+describe("families", () => {
+  it("splits a day by the model's maker, so a Claude model run through Codex counts as Claude", () => {
+    const rows = [
+      row({ provider: "claude", model: "claude-opus-5-5", output: 1_000 }),
+      row({ provider: "codex", model: "anthropic/claude-opus-5-5", output: 500 }),
+      row({ provider: "codex", model: "gpt-6.1-sol", input: 2_000 }),
+    ];
+    const totals = familyTotals({ day: "2026-11-20", rows, commits: [] });
+    expect(totals.map(([day, family, tokens]) => [day, family, tokens])).toEqual([
+      ["2026-11-20", "claude", 1_500],
+      ["2026-11-20", "codex", 2_000],
+    ]);
+    const all = Math.round(rows.reduce((sum, r) => sum + costMicros(r, "2026-11-20"), 0));
+    expect(Math.abs(totals.reduce((sum, t) => sum + t[3], 0) - all)).toBeLessThanOrEqual(1);
+  });
+
+  it("leaves out a family with no usage that day", () => {
+    const totals = familyTotals({ day: "2026-11-20", rows: [row({ provider: "codex", model: "gpt-6.1-sol", input: 10 })], commits: [] });
+    expect(totals.map(([, family]) => family)).toEqual(["codex"]);
   });
 });

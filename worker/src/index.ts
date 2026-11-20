@@ -2,8 +2,8 @@ import { deleteAccount, endSession, pollDeviceFlow, requireUser, startDeviceFlow
 import { DAY_MS, dayStartMs, type PeriodKind, utcDay } from "./dates";
 import type { Env, RateLimiter } from "./env";
 import { HttpError, errorResponse, json, readJson } from "./http";
-import { METRICS, type Metric, leaderboard, profile, standing } from "./leaderboard";
-import { PRICING, PRICING_VERSION } from "./pricing";
+import { type Board, METRICS, type Metric, leaderboard, profile, standing } from "./leaderboard";
+import { FAMILIES, PRICING, PRICING_VERSION } from "./pricing";
 import { saveUpload } from "./usage";
 import { parseUpload } from "./validate";
 
@@ -35,9 +35,12 @@ function rankingQuery(url: URL, nowMs: number) {
   const day = url.searchParams.get("date") ?? utcDay(nowMs);
   if (!PERIOD_KINDS.includes(kind)) throw new HttpError(400, "bad_period");
   if (!(metric in METRICS)) throw new HttpError(400, "bad_metric");
+  const board = (url.searchParams.get("family") ?? "all") as Board;
+  if (board !== "all" && !(FAMILIES as readonly string[]).includes(board)) throw new HttpError(400, "bad_family");
+  if (board !== "all" && metric === "commits") throw new HttpError(400, "bad_metric", "Commits are not split by model family.");
   const start = dayStartMs(day);
   if (start === null || start > nowMs + DAY_MS || start < nowMs - HISTORY_DAYS * DAY_MS) throw new HttpError(400, "bad_date");
-  return { kind, metric, day };
+  return { kind, metric, day, board };
 }
 
 /**
@@ -70,10 +73,10 @@ async function route(request: Request, env: Env, ctx: ExecutionContext): Promise
       return cachedPublic(request, env, ctx, `${url.origin}/v1/pricing?v=${PRICING_VERSION}`, PRICING_TTL_S, async () => json(PRICING));
 
     case "GET /v1/leaderboard": {
-      const { kind, metric, day } = rankingQuery(url, nowMs);
-      const cacheUrl = `${url.origin}/v1/leaderboard?period=${kind}&metric=${metric}&date=${day}`;
+      const { kind, metric, day, board } = rankingQuery(url, nowMs);
+      const cacheUrl = `${url.origin}/v1/leaderboard?period=${kind}&metric=${metric}&date=${day}&family=${board}`;
       return cachedPublic(request, env, ctx, cacheUrl, PUBLIC_TTL_S, async () =>
-        json({ ...(await leaderboard(env, kind, metric, day)), generated_at: new Date(nowMs).toISOString() }));
+        json({ ...(await leaderboard(env, kind, metric, day, board)), generated_at: new Date(nowMs).toISOString() }));
     }
 
     case "POST /v1/auth/device": {
@@ -97,8 +100,8 @@ async function route(request: Request, env: Env, ctx: ExecutionContext): Promise
 
     case "GET /v1/me": {
       const user = await signedIn(request, env, nowMs);
-      const { kind, metric, day } = rankingQuery(url, nowMs);
-      const mine = await standing(env, user.id, kind, metric, day);
+      const { kind, metric, day, board } = rankingQuery(url, nowMs);
+      const mine = await standing(env, user.id, kind, metric, day, board);
       return json({
         user: { login: user.login, avatar_url: user.avatar_url },
         settings: { listed: user.listed, share_commits: user.share_commits },

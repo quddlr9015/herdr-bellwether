@@ -1,5 +1,11 @@
 import { DAY_MS, type PeriodKind, dayStartMs, periodOf, utcDay } from "./dates";
 import type { Env } from "./env";
+import type { Family } from "./pricing";
+
+/** "all", or one model family. Family boards have no commits (a commit belongs to no one model). */
+export type Board = "all" | Family;
+
+const keyOf = (board: Board, key: string) => (board === "all" ? key : `${board}:${key}`);
 
 export const METRICS = { cost: "cost_micros", tokens: "tokens", commits: "commits" } as const;
 export type Metric = keyof typeof METRICS;
@@ -31,7 +37,7 @@ function previousPeriod(kind: PeriodKind, day: string) {
   return periodOf(kind, utcDay(start - DAY_MS));
 }
 
-export async function leaderboard(env: Env, kind: PeriodKind, metric: Metric, day: string) {
+export async function leaderboard(env: Env, kind: PeriodKind, metric: Metric, day: string, board: Board = "all") {
   const period = periodOf(kind, day);
   const previous = previousPeriod(kind, day);
   const column = METRICS[metric];
@@ -45,16 +51,17 @@ export async function leaderboard(env: Env, kind: PeriodKind, metric: Metric, da
        FROM period_totals t JOIN users u ON u.id = t.user_id LEFT JOIN before ON before.user_id = t.user_id
        WHERE t.period = ?1 AND ${PUBLIC} AND t.${column} > 0
        ORDER BY t.${column} DESC, t.user_id ASC LIMIT ${TOP}`,
-    ).bind(period.key, previous.key),
+    ).bind(keyOf(board, period.key), keyOf(board, previous.key)),
     env.DB.prepare(
       `SELECT COUNT(*) AS participants FROM period_totals t JOIN users u ON u.id = t.user_id
        WHERE t.period = ?1 AND ${PUBLIC} AND t.${column} > 0`,
-    ).bind(period.key),
+    ).bind(keyOf(board, period.key)),
   ]);
   const rows = (top?.results ?? []) as TotalsRow[];
   return {
     period,
     metric,
+    family: board,
     participants: (count?.results?.[0] as { participants: number } | undefined)?.participants ?? 0,
     entries: rows.map((row, index) => ({
       rank: index + 1,
@@ -67,11 +74,12 @@ export async function leaderboard(env: Env, kind: PeriodKind, metric: Metric, da
 }
 
 /** The signed-in user's totals and rank. Rank is null when the user has nothing in this metric. */
-export async function standing(env: Env, userId: number, kind: PeriodKind, metric: Metric, day: string) {
+export async function standing(env: Env, userId: number, kind: PeriodKind, metric: Metric, day: string, board: Board = "all") {
   const period = periodOf(kind, day);
+  const key = keyOf(board, period.key);
   const column = METRICS[metric];
   const mine = await env.DB.prepare("SELECT tokens, cost_micros, commits FROM period_totals WHERE period = ?1 AND user_id = ?2")
-    .bind(period.key, userId).first<Totals>();
+    .bind(key, userId).first<Totals>();
   const totals = mine ?? { tokens: 0, cost_micros: 0, commits: 0 };
   const value = totals[column];
   let rank: number | null = null;
@@ -79,10 +87,10 @@ export async function standing(env: Env, userId: number, kind: PeriodKind, metri
     const ahead = await env.DB.prepare(
       `SELECT COUNT(*) AS ahead FROM period_totals t JOIN users u ON u.id = t.user_id
        WHERE t.period = ?1 AND ${PUBLIC} AND t.user_id != ?3 AND (t.${column} > ?2 OR (t.${column} = ?2 AND t.user_id < ?3))`,
-    ).bind(period.key, value, userId).first<{ ahead: number }>();
+    ).bind(key, value, userId).first<{ ahead: number }>();
     rank = (ahead?.ahead ?? 0) + 1;
   }
-  return { period, metric, rank, ...present(totals) };
+  return { period, metric, family: board, rank, ...present(totals) };
 }
 
 /** A public account's last 30 days and its week and month totals, or null when it is not public. */
