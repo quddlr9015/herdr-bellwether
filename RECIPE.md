@@ -1,6 +1,6 @@
 # Token Rank
 
-A status-bar block with today's AI coding cost, a seven-day sparkline and your rank among Herdr users. Hovering it opens a panel with your usage (cards, a 30-day chart split by Claude and Codex, top models, an activity map), daily/weekly/monthly leaderboards by cost, tokens or commits, user profiles, and settings.
+A status-bar block with your AI plan limits (the herdr-usage-limits view, bundled), today's AI coding cost, a seven-day sparkline and your rank among Herdr users. Hovering the Token Rank part opens a panel with your usage (cards, a 30-day chart split by Claude and Codex, top models, an activity map), daily/weekly/monthly leaderboards by cost, tokens or commits, user profiles, and settings.
 
 ![Token Rank](preview.png)
 
@@ -8,9 +8,10 @@ A status-bar block with today's AI coding cost, a seven-day sparkline and your r
 
 Palette (fixed, readable on light and dark themes): violet `#6E56CF` (accent), plum `#A43F86` (Claude), emerald `#0E8A6E` (Codex), gold `#C9962B` / silver `#8A94A6` / bronze `#A8693A` (medals), indigo `#3E4FA8`, rust `#9A4A21`, slate `#5B6676` (initial avatars). Everything else uses `theme()` colors.
 
-- **Status-bar block** (a block in the layout's 28px status row, `chrome` background, 1px `border` top line, 12px side padding, content right-aligned, 11.8px text):
-  - signed in with a rank: a violet pill `#1` (white 11px semibold), today's cost `$61.97`, a sparkline of the last 7 days (3px bars, 12px tall, violet; empty days are `border` stubs);
-  - otherwise: the 13px trophy icon (violet once there is data, `muted` before), `$61.97 today` and the sparkline; `Reading logs…` before the first scan; `Enter 7ABE-0D06 on GitHub` while signing in.
+- **Status-bar block** (a block in the layout's 28px status row, `chrome` background, 1px `border` top line, 12px right padding, content right-aligned, 11.8px text), left to right:
+  - the usage-limits view, filling the free width and right-aligned: per provider its icon, then each window as a 10.5px `dim` label (`wk`, `Fable`), a 30×4 bar with a pace tick and the percentage in green/amber/red; providers split by 1×14 `border` dividers; it opens its own panel on hover;
+  - a 1×14 `border` divider with 12px after it;
+  - Token Rank: the 13px trophy (violet once there is data, `muted` before), the `dim` 10.5px label `today`, the cost `$77.45` in `foreground`, a sparkline of the last 7 days (3px bars, 12px tall, violet; empty days are `border` stubs), and when ranked the label `rank` and `#3` semibold violet. Before the first scan it reads `Reading logs…`; while signing in `Enter 7ABE-0D06 on GitHub`.
 - **Panel** (HoverCard anchored bottom-right, 250ms open, 350ms close), 420px wide, 12px padding and gaps, 12px radius, `popover` background, `border`, large shadow, 12px text:
   - Header: a 22px violet rounded square with a white trophy, `Token Rank` 13px semibold; on the right three text tabs (Usage, Ranking, Settings), the chosen one semibold with a 2px violet underline.
   - Optional notice line on `raised`.
@@ -30,7 +31,8 @@ Palette (fixed, readable on light and dark themes): violet `#6E56CF` (accent), p
 
 ## Built from
 
-- One mod, `mods/token-rank` (`mod.json`: `"place": "none"`), placed by the layout in the status row with `"min": 200`.
+- One mod, `mods/token-rank` (`mod.json`: `"place": "none"`), placed by the layout in the status row with `"min": 330`.
+- `limits/`: herdr-usage-limits (MIT) as a child view, `cx.new(UsageLimits, { border: false })`, rendered as the first child of the bar. Its `MOD` is `token-rank/limits` and its shared keys start with `token-rank.limits.`; its preferences fall back to `usage-limits.prefs`.
 - `main.js` (state, scanning, uploads, API, avatars, sign-in), `lib/` (`scan.js`, `pricing.js`, `stats.js`, `dates.js`, `format.js`, `api.js`), `ui/` (`bar.js`, `panel.js`, `usage.js`, `ranking.js`, `settings.js`, `charts.js`, `style.js`), `helpers/` (`scan.sh`, `record.awk`, `summarize.awk`), `icons/` (trophy, refresh).
 - `herdr`: `exec`, `readTextFile`/`writeTextFile`, `spaces()` (local space folders join the repositories read for commits), `notify`, `nextCommand`, `theme`, `props`, `checking`, `appHome`, `home`.
 - `gpui-kit`/`gpui-base`: `div`, `svg`, `image`, `h_flex`, `v_flex`, `HoverCard`; `cx.open_url`, `cx.write_to_clipboard`, `cx.sleep`, `cx.timer`.

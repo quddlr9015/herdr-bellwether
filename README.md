@@ -1,6 +1,10 @@
 # Token Rank for Herdr
 
-A Herdr mod that shows your AI coding spend in the status bar and ranks it against other Herdr users. It reads the session logs Claude Code and Codex already write on your machine, prices every request per model, counts the commits you made in the repositories your agents worked in, and puts it all in a hover panel with three tabs:
+A Herdr mod that shows your AI plan limits and coding spend in the status bar and ranks it against other Herdr users.
+
+The left part of the block is [herdr-usage-limits](https://github.com/nozikov/herdr-usage-limits), bundled unchanged in look and behavior: each provider's icon with its 5-hour, weekly and per-model limits as bars with a pace mark and a percentage, and its own hover panel with reset times, session context and settings. The right part is Token Rank: today's estimated cost, a seven-day sparkline and your rank.
+
+Token Rank reads the session logs Claude Code and Codex already write on your machine, prices every request per model, counts the commits you made in the repositories your agents worked in, and puts it all in a hover panel with three tabs:
 
 - **Usage**: today, this week and this month; the last 30 days split by Claude and Codex; your top models; a six-week activity map and your streak. Works without signing in, and nothing leaves your machine until you do.
 - **Ranking**: daily, weekly and monthly leaderboards by cost, tokens or commits, with medals, rank changes against the previous period, past periods, and a profile for every listed user.
@@ -14,8 +18,10 @@ A Herdr mod that shows your AI coding spend in the status bar and ranks it again
 2. Put it in a layout. In the default layout's status row, add a block next to the existing ones:
 
    ```json
-   { "id": "token-rank", "type": "block", "size": { "weight": 1.2 }, "min": 200, "content": { "mod": "token-rank" } }
+   { "id": "token-rank", "type": "block", "size": { "weight": 3.4 }, "min": 330, "content": { "mod": "token-rank" } }
    ```
+
+   It already shows plan limits, so remove a separate `usage-limits` block if you have one. Limit display choices made there carry over until you change them in Token Rank.
 
 3. Run `herdr-app check ~/.config/herdr-app/mods/token-rank`.
 
@@ -23,7 +29,7 @@ The status bar shows today's cost and a seven-day sparkline as soon as the first
 
 Optional keys (`keys.json`): `"token-rank:refresh"`, `"token-rank:sign-in"`, `"token-rank:sign-out"`. The same commands run from a shell with `herdr-app do token-rank.refresh`.
 
-Requirements: macOS or Linux, `git`, `curl`, `sh` and `awk`. [ripgrep](https://github.com/BurntSushi/ripgrep) is used when it is installed and makes the first scan of a large history much faster.
+Requirements: macOS or Linux, `git`, `curl`, `sh` and `awk`. [ripgrep](https://github.com/BurntSushi/ripgrep) is used when it is installed and makes the first scan of a large history much faster. Plan limits come from the installed `claude` and `codex` CLIs, as described in [herdr-usage-limits](https://github.com/nozikov/herdr-usage-limits#readme).
 
 ## What is sent
 

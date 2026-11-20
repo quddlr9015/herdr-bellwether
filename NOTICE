@@ -2,6 +2,10 @@ worker/src/pricing.json and the request-counting rules for Claude Code and
 Codex logs come from AI Token Monitor by soulduse
 (https://github.com/soulduse/ai-token-monitor), released under the MIT License.
 
-The status bar and hover panel follow the structure of herdr-usage-limits by
-nozikov (https://github.com/nozikov/herdr-usage-limits), released under the
-MIT License.
+mods/token-rank/limits is herdr-usage-limits by Anton Nozikov
+(https://github.com/nozikov/herdr-usage-limits, commit 7ea49bb), released under
+the MIT License (mods/token-rank/limits/LICENSE). Token Rank renders it as a
+child view in its status bar. Changes, each marked "Token Rank:" in the source:
+the asset/helper path constant (lib/mod.js), its shared-state keys
+(actions.js, lib/session-binding.js), and reading props from the parent view
+with the usage-limits preferences as a fallback (main.js).

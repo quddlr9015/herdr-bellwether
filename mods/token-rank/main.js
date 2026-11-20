@@ -7,6 +7,7 @@ import { pendingUpload, runScan } from "./lib/scan.js";
 import { buildDays, dayOf, lastDays, sumRange } from "./lib/stats.js";
 import { statusBar } from "./ui/bar.js";
 import { rankPanel } from "./ui/panel.js";
+import UsageLimits from "./limits/main.js";
 
 const MOD = "token-rank";
 const SCAN_EVERY_MS = 10 * 60 * 1000;
@@ -59,6 +60,8 @@ export default class TokenRank extends View {
     this.avatarBusy = false;
     this.act = this.actions();
     if (checking()) return;
+    // Plan limits exactly as the usage-limits mod shows them, drawn by its own view.
+    this.limits = cx.new(UsageLimits, { border: false });
     cx.spawn(async (later) => {
       await this.loadFiles();
       later.notify();
@@ -387,14 +390,14 @@ export default class TokenRank extends View {
   // ---- view -----------------------------------------------------------------
 
   bar() {
-    const today = dayOf(this.days, todayUtc());
+    const todayUsage = dayOf(this.days, todayUtc());
     const priced = Boolean(this.pricing);
     const spark = this.scan ? lastDays(this.days, 7).map((d) => (priced ? d.cost : d.tokens)) : null;
     const rank = this.auth ? this.cache["me:today"]?.data?.rank ?? null : null;
     if (this.signIn) return { label: this.signIn.user_code ? `Enter ${this.signIn.user_code} on GitHub` : "Signing in…", accent: true };
     if (!this.scan) return { label: this.scanning ? "Reading logs…" : "Token Rank", accent: false };
-    const amount = priced ? formatUsd(today.cost ?? 0) : `${formatTokens(today.tokens)} tokens`;
-    return { rank, label: rank ? amount : `${amount} today`, accent: true, spark };
+    const today = priced ? formatUsd(todayUsage.cost ?? 0) : `${formatTokens(todayUsage.tokens)} tok`;
+    return { rank, today, accent: true, spark };
   }
 
   render(_cx) {
@@ -433,6 +436,6 @@ export default class TokenRank extends View {
       scannedAt: this.scannedAt,
       scanError: this.scanError,
     }, t);
-    return statusBar({ ...this.bar(), onHover: this.act.hover, panel, border: props()?.border }, t);
+    return statusBar({ ...this.bar(), limits: this.limits ?? null, onHover: this.act.hover, panel, border: props()?.border }, t);
   }
 }
