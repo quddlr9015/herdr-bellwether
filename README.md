@@ -14,10 +14,10 @@ Everything is in one block with one panel, opened by a click. The left part of t
 
 Bellwether reads the session logs Claude Code and Codex already write on your machine, prices every request per model, counts the commits you made in the repositories your agents worked in, and puts it all in a panel with four tabs (a click on the block opens it; a click outside or Escape closes it):
 
-- **Overview**: the plan limits panel from usage-limits (this session's context, every limit with its pace and time to reset, its refresh and settings), then today's and this week's cost and your weekly rank.
-- **Usage**: today, this week and this month; the last 30 days split by Claude and Codex; your top models; a six-week activity map and your streak. Works without signing in, and nothing leaves your machine until you do.
+- **Overview**: the plan limits panel from usage-limits (this session's context, every limit with its pace and time to reset, its refresh and settings), then today's and this week's cost and your weekly rank, and your activity as GitHub-style green squares for the last 16 weeks, a month or a calendar year (page back with ‹ ›), with the range's total, best day, daily average and your current and longest streaks.
+- **Usage**: today, this week and this month; the last 30 days split by Claude and Codex; your top models; all-time totals. Works without signing in, and nothing leaves your machine until you do.
 - **Ranking**: daily, weekly and monthly leaderboards for all models, Claude or Codex, ranked by tokens (each row also shows the estimated cost) or, across all models, by commits, with medals, rank changes against the previous period, past periods, and a profile for every listed user.
-- **Settings**: GitHub sign-in, whether you are listed, whether commit counts are shared, a weekly summary to paste anywhere, and deleting your data.
+- **Settings**: GitHub sign-in, whether you are listed, whether commit counts are shared, a weekly summary to paste anywhere, deleting your data, updates, a bug report, and the interface language: System (follows your Mac), English, 한국어, 日本語, 简体中文, 繁體中文, Español, Français or Deutsch.
 
 
 ## Install by hand

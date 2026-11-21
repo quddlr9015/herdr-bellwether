@@ -1,4 +1,6 @@
 // Token Rank: secondary text in `muted` (`dim` falls under 3:1 on light themes) and at least 11.5px.
+// Token Rank: its labels go through tr() for the interface language.
+import { tr } from "../../lib/locale.js";
 import { div, svg } from "gpui-kit";
 import { HoverCard, h_flex } from "gpui-base";
 import { DIMMED, divider, levelColor, limitNumberColor, modIcon, providerIcon, sessionNumberColor, usageBar } from "./kit.js";
@@ -19,7 +21,7 @@ function segment(s, density, t) {
 
 function spendSegment(today, t) {
   return h_flex().gap(5).items_center().flex_none()
-    .child(label("today", t))
+    .child(label(tr("today"), t))
     .child(div().whitespace_nowrap().text_color(t.foreground).child(today));
 }
 

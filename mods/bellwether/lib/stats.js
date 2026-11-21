@@ -71,13 +71,16 @@ export function topModels(days, from, limit) {
 }
 
 /** Days in a row with any usage, counting back from today (or yesterday when today is still empty). */
-export function streak(days) {
-  let day = todayUtc();
-  if (!(dayOf(days, day).tokens > 0)) day = addDays(day, -1);
-  let count = 0;
-  while (dayOf(days, day).tokens > 0) {
-    count += 1;
-    day = addDays(day, -1);
+/** Runs of consecutive days with usage: { current: {length, from, to}, longest: {length, from, to} }. */
+export function streaks(days) {
+  const active = [...days.entries()].filter(([, d]) => d.tokens > 0).map(([day]) => day).sort();
+  let longest = { length: 0, from: null, to: null };
+  let run = null;
+  for (const day of active) {
+    run = run && addDays(run.to, 1) === day ? { length: run.length + 1, from: run.from, to: day } : { length: 1, from: day, to: day };
+    if (run.length > longest.length) longest = run;
   }
-  return count;
+  const today = todayUtc();
+  const current = run && (run.to === today || run.to === addDays(today, -1)) ? run : { length: 0, from: null, to: null };
+  return { current, longest };
 }

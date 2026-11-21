@@ -1,3 +1,5 @@
+import { tr } from "./locale.js";
+
 export function formatTokens(n) {
   if (n >= 1e12) return `${(n / 1e12).toFixed(1)}T`;
   if (n >= 1e9) return `${(n / 1e9).toFixed(n >= 1e10 ? 0 : 1)}B`;
@@ -18,9 +20,9 @@ export const formatPercent = (share) => `${Math.round(share * 100)}%`;
 
 export function formatAgo(ms) {
   const minutes = Math.floor((Date.now() - ms) / 60000);
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes} min ago`;
-  return `${Math.floor(minutes / 60)} h ago`;
+  if (minutes < 1) return tr("just now");
+  if (minutes < 60) return tr("{n} min ago", { n: minutes });
+  return tr("{n} h ago", { n: Math.floor(minutes / 60) });
 }
 
-export const commits = (n) => `${n} commit${n === 1 ? "" : "s"}`;
+export const commits = (n) => (n === 1 ? tr("1 commit") : tr("{n} commits", { n }));

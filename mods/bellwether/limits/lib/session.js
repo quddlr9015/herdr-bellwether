@@ -1,3 +1,5 @@
+// Token Rank: its labels go through tr() for the interface language.
+import { tr } from "../../lib/locale.js";
 import { level, tokens } from "./format.js";
 import { isOnBar } from "./prefs.js";
 
@@ -21,12 +23,12 @@ export function parseSession(text, app) {
 }
 
 const percent = (s) => Math.round((s.tokens / s.window) * 100);
-const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+const plural = (n, one, many) => tr(n === 1 ? one : many, { n });
 
 function context(s) {
   if (!s.window) return { text: tokens(s.tokens), detail: null, fill: null, level: "ok" };
   const p = percent(s);
-  return { text: `${p}%`, detail: `${tokens(s.tokens)} of ${tokens(s.window)}`, fill: Math.min(1, s.tokens / s.window), level: level(p) };
+  return { text: `${p}%`, detail: tr("{a} of {b}", { a: tokens(s.tokens), b: tokens(s.window) }), fill: Math.min(1, s.tokens / s.window), level: level(p) };
 }
 
 function who(s) {
@@ -40,9 +42,9 @@ export function sessionView(s, title) {
     title,
     who: who(s),
     context: context(s),
-    calls: plural(s.calls, "call"),
-    compactions: s.compactions != null ? plural(s.compactions, "compaction") : null,
-    last: s.last ? `last: ${s.last.trigger}, ${tokens(s.last.pre)} → ${tokens(s.last.post)}` : null,
+    calls: plural(s.calls, "{n} call", "{n} calls"),
+    compactions: s.compactions != null ? plural(s.compactions, "{n} compaction", "{n} compactions") : null,
+    last: s.last ? tr("last: {trigger}, {pre} → {post}", { trigger: s.last.trigger, pre: tokens(s.last.pre), post: tokens(s.last.post) }) : null,
   };
 }
 

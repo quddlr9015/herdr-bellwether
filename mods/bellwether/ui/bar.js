@@ -2,6 +2,7 @@ import { div, svg } from "gpui-kit";
 import { Popover, h_flex } from "gpui-base";
 import { sparkline } from "./charts.js";
 import { COLOR, FONT, accentInk } from "./style.js";
+import { tr } from "../lib/locale.js";
 
 // Same grammar as the limit segments beside it: a small dim label, then the value.
 const label = (text, t) => div().text_size(11.5).text_color(t.muted).whitespace_nowrap().child(text);
@@ -14,14 +15,14 @@ function tokenRank(b, t) {
       // A newer release is out (Settings → Update).
       .when(Boolean(b.update), (e) => e.child(div().absolute().top(-2).right(-3).size(6).rounded_full().bg(COLOR.coral))));
   if (b.today == null) return content.child(div().whitespace_nowrap().text_color(b.accent ? t.foreground : t.muted).child(b.label));
-  content.child(label("today", t)).child(div().whitespace_nowrap().text_color(t.foreground).child(b.today));
+  content.child(label(tr("today"), t)).child(div().whitespace_nowrap().text_color(t.foreground).child(b.today));
   if (b.todayTokens) {
     content.child(div().w(1).h(11).bg(t.border).flex_none())
       .child(div().whitespace_nowrap().text_color(t.foreground).child(b.todayTokens));
   }
   if (b.spark) content.child(div().ml(3).child(sparkline(b.spark, COLOR.accent, t)));
   if (b.rank) {
-    content.child(label("rank", t).ml(7))
+    content.child(label(tr("rank"), t).ml(7))
       .child(div().whitespace_nowrap().font_semibold().text_color(accentInk(t)).child(`#${b.rank}`));
   }
   return content;

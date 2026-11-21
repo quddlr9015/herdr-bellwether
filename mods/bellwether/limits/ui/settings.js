@@ -1,9 +1,12 @@
 // Token Rank: secondary text in `muted` (`dim` falls under 3:1 on light themes) and at least 11.5px.
+// Token Rank: its labels go through tr() for the interface language.
+import { tr } from "../../lib/locale.js";
 import { div } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
 import { SESSION_TITLE, iconButton, providerIcon, rule } from "./kit.js";
 import { panelShell } from "./panel.js";
 import { inPanel, isOnBar } from "../lib/prefs.js";
+import { reportMessage, windowLabel } from "../lib/format.js";
 import { settingsRows } from "../lib/settings.js";
 
 const PANEL_BOX_W = 40;
@@ -53,27 +56,27 @@ function providerChecks(row, act, t) {
   const color = row.dim ? t.dim : t.foreground;
   const panel = { on: row.inPanel, onToggle: () => act.togglePanel(p.id) };
   const onToggle = row.kind === "spend" ? () => act.toggleSpendBar(p.id) : () => act.toggleProvider(p.id);
-  const head = check({ id: `p-${p.id}`, on: row.on, label: [providerIcon(p.id, p.icon, color), text(p.name, color)], onToggle, extra: row.reason, panel }, t);
+  const head = check({ id: `p-${p.id}`, on: row.on, label: [providerIcon(p.id, p.icon, color), text(p.name, color)], onToggle, extra: row.reason != null ? reportMessage(row.reason) : null, panel }, t);
   const windows = row.windows.map((w) => check({
-    id: `w-${p.id}-${w.id}`, on: w.on, label: [text(w.long, row.on ? t.muted : t.dim)], onToggle: () => act.toggleWindow(p.id, w.id), indent: WINDOW_INDENT,
+    id: `w-${p.id}-${w.id}`, on: w.on, label: [text(windowLabel(w.long), row.on ? t.muted : t.dim)], onToggle: () => act.toggleWindow(p.id, w.id), indent: WINDOW_INDENT,
   }, t));
   return [head, ...windows];
 }
 
 function header(canGoBack, act, t) {
   return h_flex().gap(6).items_center().h(24)
-    .when(canGoBack, (e) => e.child(iconButton({ id: "ul-back", icon: "back", label: "Back to limits", enabled: true, onClick: (cx) => act.show("limits", cx) }, t)))
-    .child(div().font_semibold().child("Settings"));
+    .when(canGoBack, (e) => e.child(iconButton({ id: "ul-back", icon: "back", label: tr("Back to limits"), enabled: true, onClick: (cx) => act.show("limits", cx) }, t)))
+    .child(div().font_semibold().child(tr("Settings")));
 }
 
 function sessionChecks(prefs, act, t) {
   return v_flex().gap(1)
     .child(h_flex().items_center().pb(3)
-      .child(div().flex_1().font_semibold().child(SESSION_TITLE))
+      .child(div().flex_1().font_semibold().child(tr(SESSION_TITLE)))
       .child(panelBox({ id: "panel-session", on: inPanel(prefs, "session"), onToggle: () => act.togglePanel("session") }, t)))
     .children(SESSION_NUMBERS.map((name) => {
       const id = name.toLowerCase();
-      return check({ id: `s-${id}`, on: isOnBar(prefs, id), label: [text(name, t.foreground)], onToggle: () => act.toggleOnBar(id) }, t);
+      return check({ id: `s-${id}`, on: isOnBar(prefs, id), label: [text(tr(name), t.foreground)], onToggle: () => act.toggleOnBar(id) }, t);
     }));
 }
 
@@ -82,12 +85,12 @@ export function settingsPanel(canGoBack, states, panel) {
   return panelShell(panel)
     .child(header(canGoBack, act, t))
     .child(h_flex().items_center().text_size(11.5).text_color(t.muted)
-      .child(div().child("Bar")).child(div().flex_1()).child(div().child("Panel")))
+      .child(div().child(tr("Bar"))).child(div().flex_1()).child(div().child(tr("Panel"))))
     .child(v_flex().gap(1).children(settingsRows(prefs, states).flatMap((row) => providerChecks(row, act, t))))
     .child(rule(t))
-    .child(check({ id: "opt-reset-time", on: prefs.showResetTime, label: [text("Always show time to reset", t.foreground)], onToggle: act.toggleResetTime }, t))
-    .child(check({ id: "opt-bars", on: prefs.showBars, label: [text("Show bars", t.foreground)], onToggle: act.toggleBars }, t))
+    .child(check({ id: "opt-reset-time", on: prefs.showResetTime, label: [text(tr("Always show time to reset"), t.foreground)], onToggle: act.toggleResetTime }, t))
+    .child(check({ id: "opt-bars", on: prefs.showBars, label: [text(tr("Show bars"), t.foreground)], onToggle: act.toggleBars }, t))
     .child(rule(t))
     .child(sessionChecks(prefs, act, t))
-    .child(div().text_size(11.5).text_color(t.muted).child(DATA_NOTE));
+    .child(div().text_size(11.5).text_color(t.muted).child(tr(DATA_NOTE)));
 }

@@ -14,7 +14,9 @@ as a fallback and a parts() method (main.js), an exported limitsTrigger
 (ui/panel.js), and "week" instead of "wk" for the weekly windows
 (providers/claude.js, providers/codex.js), and secondary text in `muted` at
 11.5px or larger instead of `dim`, which falls under 3:1 contrast on light
-themes (ui/bar.js, ui/card.js, ui/panel.js, ui/settings.js).
+themes (ui/bar.js, ui/card.js, ui/panel.js, ui/settings.js), and labels
+that go through tr() for the interface language, with translations in
+lib/strings.js (lib/format.js, lib/session.js, lib/view.js, main.js, ui/*.js).
 
 mods/bellwether/icons/github.svg is the GitHub mark from Primer Octicons
 (https://github.com/primer/octicons, icons/mark-github-16.svg), released under

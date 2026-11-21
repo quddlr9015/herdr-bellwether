@@ -1,5 +1,6 @@
 import { div, image, svg } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
+import { tr } from "../lib/locale.js";
 
 // Instrument Sans (OFL) ships in this mod's fonts/ folder, which Herdr loads at start.
 export const FONT = "Instrument Sans";
@@ -146,7 +147,7 @@ export function rankBadge(rank, t) {
 export function rankChange(rank, previous, t) {
   const cell = div().w(34).flex_none().flex().justify_end().text_size(11.5).font_semibold();
   if (previous == null) {
-    return cell.child(div().px(4).rounded(4).bg(alpha(COLOR.accent, 0.14)).text_color(accentInk(t)).child("NEW"));
+    return cell.child(div().px(4).rounded(4).bg(alpha(COLOR.accent, 0.14)).text_color(accentInk(t)).child(tr("NEW")));
   }
   if (previous > rank) return cell.text_color(accentInk(t)).child(`▲${previous - rank}`);
   if (previous < rank) return cell.text_color(down(t)).child(`▼${rank - previous}`);

@@ -1,4 +1,6 @@
+// Token Rank: its labels go through tr() for the interface language; the translations are in lib/strings.js.
 import { View } from "gpui-kit";
+import "./lib/strings.js";
 import { focused, theme, shared, setShared } from "herdr";
 import { PROVIDERS } from "./providers/index.js";
 import { KEY_PREFS, KEY_REFRESH, KEY_STATE, USAGE_LIMITS_PREFS, nowS, refreshCooling, states, viewActions } from "./actions.js";

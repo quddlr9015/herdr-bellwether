@@ -1,5 +1,6 @@
+import "./lib/strings.js";
 import { View } from "gpui-kit";
-import { appHome, checking, exec, home, nextCommand, notify, props, readTextFile, run, spaces, theme, updates, writeTextFile } from "herdr";
+import { appHome, checking, exec, home, nextCommand, notify, props, readTextFile, run, setShared, shared, spaces, theme, updates, writeTextFile } from "herdr";
 import { h_flex } from "gpui-base";
 import { ApiError, request } from "./lib/api.js";
 import { anchorDay, periodLabel, periodRange, todayUtc } from "./lib/dates.js";
@@ -9,6 +10,7 @@ import { accountReportUrl, bugReportUrl, diagnostics } from "./lib/report.js";
 import { pendingUpload, runScan } from "./lib/scan.js";
 import { CHECK_EVERY_MS, compareVersions, latestRelease } from "./lib/update.js";
 import { VERSION } from "./lib/version.js";
+import { matchLanguage, setCurrentLanguage, tr } from "./lib/locale.js";
 import { buildDays, dayOf, lastDays, sumRange } from "./lib/stats.js";
 import { statusBar } from "./ui/bar.js";
 import { rankPanel } from "./ui/panel.js";
@@ -25,6 +27,18 @@ const AVATARS_PER_BOARD = 40;
 const REPO_URL = "https://github.com/quddlr9015/herdr-bellwether";
 // Room the Token Rank numbers take at the right of the bar; the plan limits get the rest.
 const TOKEN_RANK_BAR_W = 330;
+
+// The interface language every copy reads: "auto" (the system's) or a code from LANGUAGES.
+const LANGUAGE_KEY = "bellwether.language";
+
+/** The system's language: macOS's first preferred language, else LC_ALL / LC_MESSAGES / LANG. */
+async function systemLanguage() {
+  const apple = await exec("defaults", ["read", "-g", "AppleLanguages"]).catch(() => null);
+  const first = apple?.code === 0 ? /"?([A-Za-z]{2,3}(?:[-_][A-Za-z0-9]+)*)"?/.exec(apple.stdout.replace(/^[\s(]+/, ""))?.[1] : null;
+  if (matchLanguage(first)) return matchLanguage(first);
+  const env = await exec("sh", ["-c", 'printf %s "${LC_ALL:-${LC_MESSAGES:-$LANG}}"']).catch(() => null);
+  return matchLanguage(env?.stdout) ?? "en";
+}
 
 const message = (error) => (error instanceof Error ? error.message : String(error));
 const parseJson = (text, fallback) => {
@@ -56,6 +70,9 @@ export default class TokenRank extends View {
     this.metric = "tokens";
     // Board: "all", "claude" or "codex". Commits are only ranked on "all".
     this.family = "all";
+    // Usage → Activity: "weeks" (the last 16), "month" or "year" (`activityOffset` months or years back).
+    this.activityView = "weeks";
+    this.activityOffset = 0;
     this.offset = 0;
     this.viewing = null;
     this.auth = null;
@@ -77,6 +94,8 @@ export default class TokenRank extends View {
     this.act = this.actions();
     this.barWidth = 0;
     this.updateState = { checking: false, installing: false, error: null };
+    this.systemLanguage = "en";
+    this.languageMenu = false;
     // Tallest the panel has been. The hover panel hangs from the bar, so a shorter
     // tab would pull its top edge (and the tabs) out from under the pointer and close it.
     this.panelMinH = 0;
@@ -88,6 +107,7 @@ export default class TokenRank extends View {
     this.limits.init({ border: false }, cx);
     cx.spawn(async (later) => {
       await this.loadFiles();
+      this.systemLanguage = await systemLanguage();
       later.notify();
       await this.checkUpdate(later);
       await this.loadPricing(later);
@@ -165,7 +185,7 @@ export default class TokenRank extends View {
     if (this.role !== "bar") return;
     const info = this.updateInfo ?? {};
     if (info.seen_version && info.seen_version !== VERSION) {
-      notify({ title: "Bellwether", body: `Updated to ${VERSION}.`, level: "success" });
+      notify({ title: "Bellwether", body: tr("Updated to {version}.", { version: VERSION }), level: "success" });
     }
     if (info.seen_version !== VERSION) await this.saveUpdateInfo({ seen_version: VERSION });
     if (!force && info.checked_at && Date.now() - info.checked_at < CHECK_EVERY_MS) return;
@@ -175,7 +195,7 @@ export default class TokenRank extends View {
       const latest = await latestRelease();
       const fresh = compareVersions(latest.version, VERSION) > 0;
       if (fresh && this.updateInfo.notified !== latest.version) {
-        notify({ title: "Bellwether", body: `Version ${latest.version} is out. Settings → Update.` });
+        notify({ title: "Bellwether", body: tr("Version {version} is out. Settings → Update.", { version: latest.version }) });
         await this.saveUpdateInfo({ notified: latest.version });
       }
       await this.saveUpdateInfo({ checked_at: Date.now(), latest });
@@ -201,7 +221,7 @@ export default class TokenRank extends View {
     const result = await exec("sh", [script, latest.tag, `${appHome()}/mods/${MOD}`, this.stateDir], { timeout: 3 * 60 * 1000 }).catch((error) => ({ code: -1, stderr: message(error) }));
     // On success Herdr reloads this mod from the new files and this copy stops here.
     if (result.code !== 0) {
-      this.updateState = { installing: false, error: result.stderr?.trim().split("\n").pop() || `update exited with ${result.code}` };
+      this.updateState = { installing: false, error: result.stderr?.trim().split("\n").pop() || tr("update exited with {code}", { code: result.code }) };
       cx.notify();
     }
   }
@@ -274,7 +294,7 @@ export default class TokenRank extends View {
   async handleApiError(error, cx) {
     if (error instanceof ApiError && error.status === 401) {
       await this.setAuth(null);
-      this.notice = "Your session ended. Sign in again to keep ranking.";
+      this.notice = tr("Your session ended. Sign in again to keep ranking.");
     } else {
       this.notice = message(error);
     }
@@ -378,16 +398,16 @@ export default class TokenRank extends View {
           waitMs += 5000;
           continue;
         }
-        if (reply.status !== "ok") throw new Error(reply.status === "denied" ? "GitHub sign-in was cancelled." : "The code expired. Try again.");
+        if (reply.status !== "ok") throw new Error(reply.status === "denied" ? tr("GitHub sign-in was cancelled.") : tr("The code expired. Try again."));
         this.signIn = null;
         await this.setAuth({ token: reply.token, login: reply.user.login, avatar_url: reply.user.avatar_url });
-        notify({ title: "Bellwether", body: `Signed in as ${reply.user.login}. Your totals upload every 10 minutes.`, level: "success" });
+        notify({ title: "Bellwether", body: tr("Signed in as {login}. Your totals upload every 10 minutes.", { login: reply.user.login }), level: "success" });
         this.tab = "ranking";
         cx.notify();
         await this.sync(cx);
         return;
       }
-      throw new Error("The code expired. Try again.");
+      throw new Error(tr("The code expired. Try again."));
     } catch (error) {
       this.signIn = null;
       this.notice = message(error);
@@ -399,9 +419,12 @@ export default class TokenRank extends View {
     const week = periodRange("week", todayUtc());
     const total = sumRange(this.days, week.from, week.to);
     const mine = this.cache["me:week"]?.data;
-    const amount = this.pricing ? `${formatUsd(total.cost)} · ${formatTokens(total.tokens)} tokens` : `${formatTokens(total.tokens)} tokens`;
-    const rank = mine?.rank ? ` · #${mine.rank} on Bellwether` : "";
-    return `My AI coding this week: ${amount} · ${commits(total.commits)}${rank}. Herdr mod: ${REPO_URL}`;
+    const tokens = tr("{n} tokens", { n: formatTokens(total.tokens) });
+    const amount = this.pricing ? `${formatUsd(total.cost)} · ${tokens}` : tokens;
+    const vars = { amount, commits: commits(total.commits), rank: mine?.rank, url: REPO_URL };
+    return mine?.rank
+      ? tr("My AI coding this week: {amount} · {commits} · #{rank} on Bellwether. Herdr mod: {url}", vars)
+      : tr("My AI coding this week: {amount} · {commits}. Herdr mod: {url}", vars);
   }
 
   actions() {
@@ -441,6 +464,24 @@ export default class TokenRank extends View {
       pickMetric: (metric, cx) => {
         this.metric = metric;
         reload(cx);
+      },
+      toggleLanguages: (cx) => {
+        this.languageMenu = !this.languageMenu;
+        cx.notify();
+      },
+      pickLanguage: (code, cx) => {
+        this.languageMenu = false;
+        setShared(LANGUAGE_KEY, code);
+        cx.notify();
+      },
+      pickActivity: (view, cx) => {
+        this.activityView = view;
+        this.activityOffset = 0;
+        cx.notify();
+      },
+      shiftActivity: (steps, cx) => {
+        this.activityOffset = Math.max(0, this.activityOffset + steps);
+        cx.notify();
       },
       pickFamily: (family, cx) => {
         this.family = family;
@@ -523,7 +564,7 @@ export default class TokenRank extends View {
           try {
             await request("DELETE", "/v1/me", { token: this.auth.token });
             await this.setAuth(null);
-            this.notice = "Your account and uploaded totals were deleted.";
+            this.notice = tr("Your account and uploaded totals were deleted.");
           } catch (error) {
             await this.handleApiError(error, task);
           }
@@ -540,14 +581,16 @@ export default class TokenRank extends View {
     const priced = Boolean(this.pricing);
     const spark = this.scan ? lastDays(this.days, 7).map((d) => (priced ? d.cost : d.tokens)) : null;
     const rank = this.auth ? this.cache["me:today"]?.data?.rank ?? null : null;
-    if (this.signIn) return { label: this.signIn.user_code ? `Enter ${this.signIn.user_code} on GitHub` : "Signing in…", accent: true };
-    if (!this.scan) return { label: this.scanning ? "Reading logs…" : "Bellwether", accent: false };
+    if (this.signIn) return { label: this.signIn.user_code ? tr("Enter {code} on GitHub", { code: this.signIn.user_code }) : tr("Signing in…"), accent: true };
+    if (!this.scan) return { label: this.scanning ? tr("Reading logs…") : "Bellwether", accent: false };
     const today = priced ? formatUsd(todayUsage.cost ?? 0) : null;
     const update = Boolean(this.updateInfo?.latest && compareVersions(this.updateInfo.latest.version, VERSION) > 0);
     return { rank, today: today ?? formatTokens(todayUsage.tokens), todayTokens: today ? formatTokens(todayUsage.tokens) : null, accent: true, spark, update };
   }
 
   render(cx) {
+    const chosen = shared(LANGUAGE_KEY) ?? "auto";
+    setCurrentLanguage(chosen === "auto" ? this.systemLanguage : chosen);
     const t = theme();
     const limits = this.limits?.parts(cx, Math.max(0, this.barWidth - TOKEN_RANK_BAR_W)) ?? null;
     const date = this.anchor();
@@ -573,6 +616,11 @@ export default class TokenRank extends View {
       scanned: Boolean(this.scan),
       period: this.period,
       family: this.family,
+      activityView: this.activityView,
+      language: shared(LANGUAGE_KEY) ?? "auto",
+      systemLanguage: this.systemLanguage,
+      languageMenu: this.languageMenu,
+      activityOffset: this.activityOffset,
       metric: this.metric,
       offset: this.offset,
       periodText: periodLabel(this.period, date, this.offset),

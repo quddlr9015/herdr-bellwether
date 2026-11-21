@@ -1,4 +1,6 @@
-import { timeLeft, level, pace, ago, tokens } from "./format.js";
+// Token Rank: its labels go through tr() for the interface language.
+import { tr } from "../../lib/locale.js";
+import { timeLeft, level, pace, ago, tokens, windowLabel, reportMessage } from "./format.js";
 import { isShown, inPanel, isFolded, spendOnBar, effectivePrefs } from "./prefs.js";
 import { PROVIDERS } from "../providers/index.js";
 
@@ -18,14 +20,14 @@ const shownReading = (st) => (st?.report?.status === "ok" ? st.report : st?.last
 
 export function segmentView(w, now, showResetTime = false) {
   if (passed(w, now)) {
-    return { id: w.id, short: w.short, text: NO_READING, brief: NO_READING, level: "ok", fill: 0, tick: null, expired: true };
+    return { id: w.id, short: windowLabel(w.short), text: NO_READING, brief: NO_READING, level: "ok", fill: 0, tick: null, expired: true };
   }
   const lv = level(w.percent);
   const timeToReset = w.resetsAt != null ? ` · ${timeLeft(w.resetsAt - now)}` : "";
   const brief = `${w.percent}%${lv !== "ok" ? timeToReset : ""}`;
   return {
     id: w.id,
-    short: w.short,
+    short: windowLabel(w.short),
     text: showResetTime ? `${w.percent}%${timeToReset}` : brief,
     brief,
     level: lv,
@@ -37,21 +39,25 @@ export function segmentView(w, now, showResetTime = false) {
 
 const capitalized = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
-const VERDICT = { "on pace": "you're on pace", ahead: "you're using it up too fast", under: "you have room to spare" };
+const VERDICT = {
+  "on pace": "Tick: {elapsed}% of the time has passed.\nYou've used {percent}%, so you're on pace.",
+  ahead: "Tick: {elapsed}% of the time has passed.\nYou've used {percent}%, so you're using it up too fast.",
+  under: "Tick: {elapsed}% of the time has passed.\nYou've used {percent}%, so you have room to spare.",
+};
 
 function tickHint(percent, p) {
   if (!p) return null;
-  return `Tick: ${Math.round(p.elapsed * 100)}% of the time has passed.\nYou've used ${percent}%, so ${VERDICT[p.verdict]}.`;
+  return tr(VERDICT[p.verdict], { elapsed: Math.round(p.elapsed * 100), percent });
 }
 
 function cardRow(w, now) {
   if (passed(w, now)) {
-    return { id: w.id, long: w.long, percent: NO_READING, level: "ok", fill: 0, tick: null, hint: null, left: "", detail: "reset, waiting for a new reading" };
+    return { id: w.id, long: windowLabel(w.long), percent: NO_READING, level: "ok", fill: 0, tick: null, hint: null, left: "", detail: tr("reset, waiting for a new reading") };
   }
   const p = pace(w, now);
   return {
     id: w.id,
-    long: w.long,
+    long: windowLabel(w.long),
     percent: `${w.percent}%`,
     level: level(w.percent),
     fill: fillOf(w.percent),
@@ -89,12 +95,12 @@ export function wanted(prefs, p, states, providers = PROVIDERS) {
 }
 
 function readingStatus(report, lastGood, now) {
-  if (report.status === "ok") return { status: `updated ${ago(report.observedAt, now)}`, failed: false, dim: isStale(report, now), age: null };
+  if (report.status === "ok") return { status: tr("updated {ago}", { ago: ago(report.observedAt, now) }), failed: false, dim: isStale(report, now), age: null };
   return {
-    status: report.message ?? report.status,
+    status: reportMessage(report.message ?? report.status),
     failed: true,
     dim: true,
-    age: lastGood ? `Last reading ${ago(lastGood.observedAt, now)}` : null,
+    age: lastGood ? tr("Last reading {ago}", { ago: ago(lastGood.observedAt, now) }) : null,
   };
 }
 
@@ -120,7 +126,7 @@ function limitsGroup(p, st, now, prefs) {
   return {
     providerId: p.id, name: p.name, icon: p.icon,
     plan: report?.status === "ok" && report.plan ? capitalized(report.plan) : null,
-    ...(report ? readingStatus(report, lastGood, now) : LOADING),
+    ...(report ? readingStatus(report, lastGood, now) : { ...LOADING, status: tr(LOADING.status) }),
     rows: report ? windows.map((w) => cardRow(w, now)) : [],
     kind: "limits",
     folded: isFolded(prefs, p.id),
@@ -199,7 +205,7 @@ const SEGMENT_BAR_W = 30;
 const GAP_W = 12;
 const LABEL_GAP_W = 8;
 
-const spendWidth = (g) => LABEL_GAP_W + LABEL_CHAR_W * "today".length + CHAR_W * g.spend.length + GAP_W;
+const spendWidth = (g) => LABEL_GAP_W + LABEL_CHAR_W * tr("today").length + CHAR_W * g.spend.length + GAP_W;
 
 function segmentWidth(s, density) {
   const text = CHAR_W * (density === DENSITY.BRIEF ? s.brief : s.text).length + GAP_W;

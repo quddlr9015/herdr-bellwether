@@ -4,11 +4,12 @@ import { barChart } from "./charts.js";
 import { COLOR, FAMILY, accentInk, alpha, avatar, button, caption, dot, figure, githubButton, rankBadge, rankChange, rule, segmented, vrule } from "./style.js";
 import { shortDay } from "../lib/dates.js";
 import { commits, formatTokens, formatUsd } from "../lib/format.js";
+import { tr } from "../lib/locale.js";
 
-const PERIODS = [["day", "Day"], ["week", "Week"], ["month", "Month"]];
+const PERIODS = () => [["day", tr("Day")], ["week", tr("Week")], ["month", tr("Month")]];
 // Ranked by tokens, with the estimated cost shown beside them. A commit belongs to
 // no one model, so the Claude and Codex boards have tokens only and no switch.
-const METRICS = [["tokens", "Tokens"], ["commits", "Commits"]];
+const METRICS = () => [["tokens", tr("Tokens")], ["commits", tr("Commits")]];
 const LIST_H = 236;
 const LIST_H_UNDER_PODIUM = 172;
 // Rows the list shows before it scrolls; a rank below them gets its own row under the list.
@@ -17,9 +18,9 @@ const MEDALS = [COLOR.gold, COLOR.silver, COLOR.bronze];
 const PODIUM = [{ place: 1, avatar: 30, base: 18 }, { place: 0, avatar: 38, base: 28 }, { place: 2, avatar: 30, base: 12 }];
 
 const rankedValue = (metric, entry) => (metric === "commits" ? entry.commits ?? 0 : entry.tokens ?? 0);
-const formatRanked = (metric, value) => (metric === "commits" ? commits(value) : `${formatTokens(value)} tokens`);
+const formatRanked = (metric, value) => (metric === "commits" ? commits(value) : tr("{n} tokens", { n: formatTokens(value) }));
 
-const familyLabel = (family, t) => (family === "all" ? "All" : h_flex().gap(5).items_center()
+const familyLabel = (family, t) => (family === "all" ? tr("All") : h_flex().gap(5).items_center()
   .child(dot(FAMILY[family].color, 6)).child(FAMILY[family].label));
 
 function navButton(id, label, enabled, onClick, t) {
@@ -34,14 +35,14 @@ function controls(s, t) {
   return v_flex().gap(8)
     .child(h_flex().justify_between()
       .child(segmented("tr-family", families, s.family, s.act.pickFamily, t))
-      .child(segmented("tr-period", PERIODS, s.period, s.act.pickPeriod, t)))
+      .child(segmented("tr-period", PERIODS(), s.period, s.act.pickPeriod, t)))
     .child(h_flex().items_center().gap(4)
       .child(navButton("tr-prev", "‹", s.offset < 12, (cx) => s.act.shift(1, cx), t))
       .child(div().font_semibold().text_color(t.foreground).whitespace_nowrap().child(s.periodText))
       .child(navButton("tr-next", "›", s.offset > 0, (cx) => s.act.shift(-1, cx), t))
-      .child(div().ml(4).text_size(11.5).text_color(t.muted).whitespace_nowrap().child(s.board ? `${s.board.participants} ranked` : ""))
+      .child(div().ml(4).text_size(11.5).text_color(t.muted).whitespace_nowrap().child(s.board ? tr("{n} ranked", { n: s.board.participants }) : ""))
       .child(div().flex_1())
-      .when(s.family === "all", (e) => e.child(segmented("tr-metric", METRICS, s.metric, s.act.pickMetric, t))));
+      .when(s.family === "all", (e) => e.child(segmented("tr-metric", METRICS(), s.metric, s.act.pickMetric, t))));
 }
 
 /** How far the next place is, or the lead over the one below, from the shown board. */
@@ -52,10 +53,10 @@ function gapLine(s) {
   const mine = rankedValue(s.metric, s.mine);
   if (rank === 1) {
     const second = entries[1];
-    return second ? `Ahead of #2 by ${formatRanked(s.metric, Math.max(0, mine - rankedValue(s.metric, second)))}` : "Leading the flock";
+    return second ? tr("Ahead of #2 by {amount}", { amount: formatRanked(s.metric, Math.max(0, mine - rankedValue(s.metric, second))) }) : tr("Leading the flock");
   }
   const above = entries.find((entry) => entry.rank === rank - 1);
-  return above ? `${formatRanked(s.metric, Math.max(0, rankedValue(s.metric, above) - mine))} to #${rank - 1}` : null;
+  return above ? tr("{amount} to #{rank}", { amount: formatRanked(s.metric, Math.max(0, rankedValue(s.metric, above) - mine)), rank: rank - 1 }) : null;
 }
 
 function standingCard(s, t) {
@@ -68,12 +69,12 @@ function standingCard(s, t) {
     .child(v_flex().flex_1().min_w(0).gap(2)
       .child(div().truncate().font_semibold().text_color(t.foreground).child(s.login))
       .child(div().text_size(11.5).truncate().text_color(t.muted).child(mine
-        ? `${formatTokens(mine.tokens)} tokens, ${formatUsd(mine.cost_usd)}, ${commits(mine.commits)}`
-        : "Loading…"))
+        ? `${tr("{n} tokens", { n: formatTokens(mine.tokens) })}, ${formatUsd(mine.cost_usd)}, ${commits(mine.commits)}`
+        : tr("Loading…")))
       .when(Boolean(gap), (e) => e.child(div().text_size(11.5).truncate().text_color(rank === 1 ? accentInk(t) : t.foreground).child(gap ?? ""))))
     .child(v_flex().items_end()
       .child(div().text_size(28).font_semibold().text_color(t.foreground).child(rank ? `#${rank}` : "—"))
-      .child(div().text_size(11.5).text_color(t.muted).child(hidden ? "hidden" : rank ? `of ${Math.max(s.board?.participants ?? 0, rank)}` : "no usage")));
+      .child(div().text_size(11.5).text_color(t.muted).child(hidden ? tr("hidden") : rank ? tr("of {n}", { n: Math.max(s.board?.participants ?? 0, rank) }) : tr("no usage"))));
 }
 
 /** The top three on steps, first in the middle; a click opens a profile. */
@@ -98,17 +99,17 @@ function joinCard(s, t) {
   const code = s.signIn?.user_code;
   if (s.signIn) {
     return v_flex().gap(8)
-      .child(div().text_color(t.muted).child(code ? "Enter this code on GitHub. It is on your clipboard." : "Asking GitHub for a code…"))
+      .child(div().text_color(t.muted).child(code ? tr("Enter this code on GitHub. It is on your clipboard.") : tr("Asking GitHub for a code…")))
       .when(Boolean(code), (e) => e.child(h_flex().gap(10).items_center()
         .child(div().px(10).py(4).rounded(6).border(1).border_color(t.border).text_size(20).font_semibold().text_color(t.foreground).child(code))
-        .child(githubButton("tr-open-github", "Open GitHub", s.act.openGitHub))
-        .child(button("tr-cancel", "Cancel", s.act.cancelSignIn, t))));
+        .child(githubButton("tr-open-github", tr("Open GitHub"), s.act.openGitHub))
+        .child(button("tr-cancel", tr("Cancel"), s.act.cancelSignIn, t))));
   }
   return h_flex().gap(12).items_center()
     .child(v_flex().flex_1().min_w(0).gap(2)
-      .child(div().font_semibold().text_color(t.foreground).child("Join the leaderboard"))
-      .child(div().text_size(11.5).text_color(t.muted).child("Totals only. No prompts or code.")))
-    .child(div().flex_none().child(githubButton("tr-sign-in", "Sign in with GitHub", s.act.signIn)));
+      .child(div().font_semibold().text_color(t.foreground).child(tr("Join the leaderboard")))
+      .child(div().text_size(11.5).text_color(t.muted).child(tr("Totals only. No prompts or code."))))
+    .child(div().flex_none().child(githubButton("tr-sign-in", tr("Sign in with GitHub"), s.act.signIn)));
 }
 
 /**
@@ -139,11 +140,11 @@ function row(entry, s, t, { pinned = false } = {}) {
 function list(s, t) {
   const { board } = s;
   if (s.boardError) return div().py(20).text_color(t.muted).child(s.boardError);
-  if (!board) return div().py(20).text_color(t.muted).child("Loading…");
+  if (!board) return div().py(20).text_color(t.muted).child(tr("Loading…"));
   if (!board.entries.length) {
     return v_flex().py(28).gap(4).items_center()
-      .child(div().font_semibold().text_color(t.foreground).child("No one here yet"))
-      .child(div().text_size(11.5).text_color(t.muted).child("Be the first on this board."));
+      .child(div().font_semibold().text_color(t.foreground).child(tr("No one here yet")))
+      .child(div().text_size(11.5).text_color(t.muted).child(tr("Be the first on this board.")));
   }
   const stepped = board.entries.length >= 3;
   const rows = stepped ? board.entries.slice(3) : board.entries;
@@ -162,28 +163,28 @@ function list(s, t) {
 function profileView(s, t) {
   const data = s.profile?.data;
   const header = h_flex().items_center().gap(6)
-    .child(button("tr-back", "‹ Leaderboard", s.act.closeProfile, t, { quiet: true }));
+    .child(button("tr-back", `‹ ${tr("Leaderboard")}`, s.act.closeProfile, t, { quiet: true }));
   if (s.profile?.error) return v_flex().gap(10).child(header).child(div().py(20).text_color(t.muted).child(s.profile.error));
-  if (!data) return v_flex().gap(10).child(header).child(div().py(20).text_color(t.muted).child("Loading…"));
-  const stat = (label, value) => figure(`tr-profile-${label}`, label, `${formatTokens(value.tokens)} tokens`, `${formatUsd(value.cost_usd)}, ${commits(value.commits)}`, t, { size: 18 });
+  if (!data) return v_flex().gap(10).child(header).child(div().py(20).text_color(t.muted).child(tr("Loading…")));
+  const stat = (label, value) => figure(`tr-profile-${label}`, tr(label), tr("{n} tokens", { n: formatTokens(value.tokens) }), `${formatUsd(value.cost_usd)}, ${commits(value.commits)}`, t, { size: 18 });
   return v_flex().gap(12)
     .child(header)
     .child(h_flex().gap(12).items_center()
       .child(avatar(data.login, s.avatarPath(data.login), 40))
       .child(v_flex().flex_1().min_w(0)
         .child(div().text_size(15).font_semibold().text_color(t.foreground).truncate().child(data.login))
-        .child(div().text_size(11.5).text_color(t.muted).child(`Ranking since ${shortDay(data.joined)}`)))
+        .child(div().text_size(11.5).text_color(t.muted).child(tr("Ranking since {date}", { date: shortDay(data.joined) }))))
       .child(h_flex().gap(6)
-        .child(button("tr-report-account", "Report", (cx) => s.act.reportAccount(data.login, cx), t, { quiet: true }))
+        .child(button("tr-report-account", tr("Report"), (cx) => s.act.reportAccount(data.login, cx), t, { quiet: true }))
         .child(button("tr-github", "GitHub", (cx) => s.act.openGitHubProfile(data.login, cx), t, { icon: "mods/bellwether/icons/arrow-up-right.svg" }))))
     .child(h_flex().gap(12).items_center().child(stat("This week", data.week)).child(vrule(t, 44)).child(stat("This month", data.month)))
     .child(v_flex().gap(8)
-      .child(caption("Last 30 days", t))
+      .child(caption(tr("Last 30 days"), t))
       .child(barChart("tr-profile-days", data.days, {
         width: 390,
         height: 72,
         segments: (d) => [{ value: d.tokens, color: COLOR.accent }],
-        tooltip: (d) => `${shortDay(d.day)}: ${formatTokens(d.tokens)} tokens, ${formatUsd(d.cost_usd)}, ${commits(d.commits)}`,
+        tooltip: (d) => `${shortDay(d.day)}: ${tr("{n} tokens", { n: formatTokens(d.tokens) })}, ${formatUsd(d.cost_usd)}, ${commits(d.commits)}`,
       }, t)));
 }
 

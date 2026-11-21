@@ -1,4 +1,6 @@
 // Token Rank: secondary text in `muted` (`dim` falls under 3:1 on light themes) and at least 11.5px.
+// Token Rank: its labels go through tr() for the interface language.
+import { tr } from "../../lib/locale.js";
 import { div, svg } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
 import { DIMMED, LEFT_COLUMN_W, NO_READING, PERCENT_COLUMN_W, levelColor, limitNumberColor, modIcon, numberCell, providerIcon, usageBar } from "./kit.js";
@@ -78,7 +80,7 @@ export function spendLine(g, t) {
   return h_flex().gap(6).items_center().opacity(g.dim && !g.failed ? DIMMED : 1)
     .child(providerIcon(g.providerId, g.icon, t.foreground))
     .child(div().flex_none().font_semibold().child(g.name))
-    .child(g.failed ? failure(g.status, t) : rightLabel("Tokens today / 7d", t))
+    .child(g.failed ? failure(g.status, t) : rightLabel(tr("Tokens today / 7d"), t))
     .child(h_flex().gap(8).items_center().flex_none()
       .child(numberCell(PERCENT_COLUMN_W, g.today ?? NO_READING).opacity(opacity).text_color(g.today == null ? t.dim : t.foreground))
       .child(numberCell(LEFT_COLUMN_W, g.week ?? NO_READING).opacity(opacity).text_color(g.week == null ? t.dim : t.muted)));

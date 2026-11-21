@@ -1,6 +1,6 @@
+import { currentLanguage, formatMonth, formatShortDay, monthAbbrev, tr } from "./locale.js";
+
 const DAY_MS = 24 * 60 * 60 * 1000;
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 export const utcDay = (ms) => new Date(ms).toISOString().slice(0, 10);
 export const todayUtc = () => utcDay(Date.now());
@@ -30,14 +30,21 @@ export function anchorDay(kind, offset) {
   return utcDay(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() - offset, 1));
 }
 
-export const shortDay = (day) => `${MONTHS[Number(day.slice(5, 7)) - 1]} ${Number(day.slice(8))}`;
+/** "November 2026" (in the interface's language) for any day in that month. */
+export const monthLabel = (day) => formatMonth(day);
+
+export const monthShort = (index) => monthAbbrev(index);
+
+export const shortDay = (day) => formatShortDay(day);
 
 export function periodLabel(kind, day, offset) {
   const { from, to } = periodRange(kind, day);
-  if (kind === "day") return offset === 0 ? "Today" : offset === 1 ? "Yesterday" : shortDay(day);
+  if (kind === "day") return offset === 0 ? tr("Today") : offset === 1 ? tr("Yesterday") : shortDay(day);
   if (kind === "week") {
-    if (offset === 0) return "This week";
-    return `${shortDay(from)} – ${from.slice(5, 7) === to.slice(5, 7) ? Number(to.slice(8)) : shortDay(to)}`;
+    if (offset === 0) return tr("This week");
+    // English shortens a same-month range ("Oct 12 – 18"); other languages spell both days.
+    const sameMonth = from.slice(5, 7) === to.slice(5, 7) && currentLanguage() === "en";
+    return `${shortDay(from)} – ${sameMonth ? Number(to.slice(8)) : shortDay(to)}`;
   }
-  return offset === 0 ? "This month" : `${MONTH_NAMES[Number(from.slice(5, 7)) - 1]} ${from.slice(0, 4)}`;
+  return offset === 0 ? tr("This month") : formatMonth(from);
 }

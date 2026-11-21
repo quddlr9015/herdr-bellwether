@@ -6,19 +6,20 @@ import { settingsTab } from "./settings.js";
 import { COLOR, FONT, down, iconButton, rule } from "./style.js";
 import { usageTab } from "./usage.js";
 import { formatAgo } from "../lib/format.js";
+import { tr } from "../lib/locale.js";
 
 const PANEL_W = 420;
 const ICONS = "mods/bellwether/icons";
-const TABS = [
-  ["overview", "Overview", "layout-dashboard"],
-  ["usage", "Usage", "chart-column"],
-  ["ranking", "Ranking", "trophy"],
-  ["settings", "Settings", "settings"],
+const TABS = () => [
+  ["overview", tr("Overview"), "layout-dashboard"],
+  ["usage", tr("Usage"), "chart-column"],
+  ["ranking", tr("Ranking"), "trophy"],
+  ["settings", tr("Settings"), "settings"],
 ];
 
 /** Four equal tabs under the header, icon and label, the chosen one inked and underlined. */
 function tabs(s, t) {
-  return h_flex().children(TABS.map(([value, label, icon]) => {
+  return h_flex().children(TABS().map(([value, label, icon]) => {
     const on = value === s.tab;
     const ink = on ? t.foreground : t.muted;
     return v_flex().id(`tr-tab-${value}`).flex_1().cursor_pointer().on_click((_e, cx) => s.act.pickTab(value, cx))
@@ -30,13 +31,13 @@ function tabs(s, t) {
 }
 
 function footer(s, t) {
-  let status = s.scannedAt ? `Updated ${formatAgo(s.scannedAt)}` : "Not scanned yet";
-  if (s.scanning) status = "Reading session logs…";
-  if (s.scanError) status = `Scan failed: ${s.scanError}`;
+  let status = s.scannedAt ? tr("Updated {ago}", { ago: formatAgo(s.scannedAt) }) : tr("Not scanned yet");
+  if (s.scanning) status = tr("Reading session logs…");
+  if (s.scanError) status = tr("Scan failed: {error}", { error: s.scanError });
   return h_flex().gap(8).items_center()
     .child(div().flex_1().min_w(0).truncate().text_size(11.5).text_color(s.scanError ? down(t) : t.muted).child(status))
-    .child(iconButton("tr-refresh", "mods/bellwether/icons/refresh.svg", "Scan and refresh now", s.act.refresh, t))
-    .when(s.tab === "overview", (e) => e.child(iconButton("tr-limits-settings", "mods/bellwether/limits/icons/gear.svg", "Plan limit settings", s.act.limitsSettings, t)));
+    .child(iconButton("tr-refresh", "mods/bellwether/icons/refresh.svg", tr("Scan and refresh now"), s.act.refresh, t))
+    .when(s.tab === "overview", (e) => e.child(iconButton("tr-limits-settings", "mods/bellwether/limits/icons/gear.svg", tr("Plan limit settings"), s.act.limitsSettings, t)));
 }
 
 export function rankPanel(s, t) {
