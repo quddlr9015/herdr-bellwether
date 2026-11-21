@@ -1,8 +1,16 @@
 # Bellwether for Herdr
 
-A Herdr mod that shows your AI plan limits and coding spend in the status bar and ranks it against other Herdr users. A bellwether is the belled ram that leads the flock.
+Track your **Claude Code and Codex token usage and cost** in [Herdr](https://herdr.dev)'s status bar, next to your plan limits, and see where you rank among other Herdr users: daily, weekly and monthly leaderboards for all models, Claude or Codex. A bellwether is the belled ram that leads the flock.
 
-Everything is in one block with one panel, opened by a click. The left part of the block is [herdr-usage-limits](https://github.com/nozikov/herdr-usage-limits), bundled with the same look: each provider's icon with its 5-hour, weekly and per-model limits as bars with a pace mark and a percentage. The right part is Bellwether: today's estimated cost, a seven-day sparkline and your rank.
+![Bellwether: usage, the leaderboard for all models and for Codex, and settings](demo.gif)
+
+**Install with your agent.** In Herdr, ask your agent:
+
+> Add herdr.dev/mods/quddlr9015/herdr-bellwether
+
+It reads [RECIPE.md](RECIPE.md) and the files, tells you what the mod runs and reaches, and copies it in. Or install it by hand (below). Your usage stays on your machine until you sign in to rank.
+
+Everything is in one block with one panel, opened by a click. The left part of the block is [herdr-usage-limits](https://github.com/nozikov/herdr-usage-limits), bundled with the same look: each provider's icon with its 5-hour, weekly and per-model limits as bars with a pace mark and a percentage. The right part is Bellwether: today's estimated cost and tokens, a seven-day sparkline and your rank.
 
 Bellwether reads the session logs Claude Code and Codex already write on your machine, prices every request per model, counts the commits you made in the repositories your agents worked in, and puts it all in a panel with four tabs (a click on the block opens it; a click outside or Escape closes it):
 
@@ -11,9 +19,8 @@ Bellwether reads the session logs Claude Code and Codex already write on your ma
 - **Ranking**: daily, weekly and monthly leaderboards for all models, Claude or Codex, ranked by tokens (each row also shows the estimated cost) or, across all models, by commits, with medals, rank changes against the previous period, past periods, and a profile for every listed user.
 - **Settings**: GitHub sign-in, whether you are listed, whether commit counts are shared, a weekly summary to paste anywhere, and deleting your data.
 
-![Bellwether](preview.png)
 
-## Install
+## Install by hand
 
 1. Copy `mods/bellwether` into `~/.config/herdr-app/mods/`.
 2. Put it in a layout. In the default layout's status row, add a block next to the existing ones:
