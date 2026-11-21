@@ -45,7 +45,7 @@ Settings → **Report a problem** opens a new GitHub issue with the versions (Be
 
 ## Updating
 
-Once a day the mod asks GitHub for the latest release (one unauthenticated request). When a newer one is out it says so once, puts a dot on the logo, and Settings offers **Update to x.y.z**: `helpers/update.sh` downloads that tag's source archive, checks it carries that version, keeps a copy of the current folder in `~/.local/state/herdr-token-rank/backups` (the last three) and copies the new mod in, and Herdr reloads it. To release: bump `VERSION`, commit, tag `v<version>`, push the tag and publish a GitHub release for it.
+Once a day the mod asks GitHub for the latest release (one unauthenticated request). When a newer one is out it says so once, puts a dot on the logo, and offers **Update** at the top of Overview and in Settings: `helpers/update.sh` downloads that tag's source archive, checks it carries that version, keeps a copy of the current folder in `~/.local/state/herdr-token-rank/backups` (the last three) and copies the new mod in, and Herdr reloads it. To release: bump `VERSION`, commit, tag `v<version>`, push the tag and publish a GitHub release for it.
 
 ## What is sent
 
