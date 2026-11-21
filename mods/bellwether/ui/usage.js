@@ -1,13 +1,13 @@
 import { div } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
 import { barChart, familySegments } from "./charts.js";
-import { COLOR, FAMILY, caption, dot, figure, rule, vrule } from "./style.js";
+import { COLOR, CONTENT_W, FAMILY, caption, dot, figure, rule, vrule } from "./style.js";
 import { addDays, periodRange, shortDay, todayUtc } from "../lib/dates.js";
 import { commits, formatPercent, formatTokens, formatUsd } from "../lib/format.js";
 import { lastDays, sumRange, topModels } from "../lib/stats.js";
 import { tr } from "../lib/locale.js";
 
-const CHART_W = 390;
+const CHART_W = CONTENT_W;
 
 const headline = (total, priced) => (priced ? formatUsd(total.cost) : formatTokens(total.tokens));
 const tokensLine = (total, priced) => (priced ? tr("{n} tokens", { n: formatTokens(total.tokens) }) : tr("tokens"));

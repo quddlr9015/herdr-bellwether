@@ -1,7 +1,7 @@
 import { div } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
 import { activityGrid, shadeLegend } from "./charts.js";
-import { accentInk, caption, figure, segmented, vrule } from "./style.js";
+import { CONTENT_W, accentInk, caption, segmented } from "./style.js";
 import { addDays, anchorDay, monthLabel, periodRange, shortDay, todayUtc } from "../lib/dates.js";
 import { commits, formatTokens, formatUsd } from "../lib/format.js";
 import { dayOf, streaks, sumRange } from "../lib/stats.js";
@@ -15,8 +15,10 @@ function navButton(id, label, enabled, onClick, t) {
 }
 
 const VIEWS = () => [["weeks", tr("Weeks")], ["month", tr("Month")], ["year", tr("Year")]];
-const GRID = { weeks: { cell: 16, gap: 3 }, month: { cell: 26, gap: 4 }, year: { cell: 5.7, gap: 1 } };
-const WEEKS = 16;
+// Square sizes per view. The year fills the width: 53 week columns beside the day labels.
+const YEAR_CELL = Math.floor(((CONTENT_W - 30 - 52) / 53) * 10) / 10;
+const GRID = { weeks: { cell: 12, gap: 3 }, month: { cell: 16, gap: 3 }, year: { cell: YEAR_CELL, gap: 1 } };
+const WEEKS = 12;
 
 /** The days the chosen view covers, its title, and whether ‹ › can move. */
 function activityRange(view, offset, first, today) {
@@ -37,6 +39,14 @@ function activityRange(view, offset, first, today) {
  * to page back; under them the range's total, best day and daily average, and
  * the current and longest streaks.
  */
+/** One line of the summary: a muted label, the value semibold, an optional muted note. */
+function stat(label, value, note, t, color = null) {
+  return h_flex().flex_1().min_w(0).gap(6).items_center()
+    .child(div().text_size(11.5).text_color(t.muted).whitespace_nowrap().child(label))
+    .child(div().font_semibold().text_color(color ?? t.foreground).whitespace_nowrap().child(value))
+    .when(Boolean(note), (e) => e.child(div().min_w(0).truncate().text_size(11.5).text_color(t.muted).child(note ?? "")));
+}
+
 export function activitySection(s, t) {
   const { days } = s;
   const priced = Boolean(s.priced);
@@ -56,7 +66,6 @@ export function activitySection(s, t) {
   const best = inRange.reduce((top, [day, d]) => (!top || (priced ? d.cost : d.tokens) > (priced ? top[1].cost : top[1].tokens) ? [day, d] : top), null);
   const perDay = inRange.length ? { cost: total.cost / inRange.length, tokens: total.tokens / inRange.length } : null;
   const runs = streaks(days);
-  const span = (run) => (run.length ? `${shortDay(run.from)} → ${run.to === today ? tr("today") : shortDay(run.to)}` : tr("No usage yet"));
   const daysText = (n) => (n === 1 ? tr("1 day") : tr("{n} days", { n }));
   const usedDays = (n) => (n === 1 ? tr("1 day with usage") : tr("{n} days with usage", { n }));
 
@@ -71,20 +80,18 @@ export function activitySection(s, t) {
     .child(div().flex_1())
     .child(segmented("tr-activity", VIEWS(), view, s.act.pickActivity, t));
 
-  return v_flex().gap(12)
+  return v_flex().gap(10)
     .child(head)
     .child(activityGrid(range.from, range.to, weightOf, tooltipOf, t, GRID[view] ?? GRID.weeks))
     .child(h_flex().justify_between().items_center()
       .child(div().text_size(11.5).text_color(t.muted).child(usedDays(inRange.length)))
       .child(shadeLegend(t)))
-    .child(h_flex().gap(12).items_center()
-      .child(figure("tr-act-total", tr("Total"), total.tokens ? amount(total) : "—", total.tokens ? tr("{n} tokens", { n: formatTokens(total.tokens) }) : null, t, { size: 18 }))
-      .child(vrule(t, 40))
-      .child(figure("tr-act-best", tr("Best day"), best ? amount(best[1]) : "—", best ? shortDay(best[0]) : null, t, { size: 18 }))
-      .child(vrule(t, 40))
-      .child(figure("tr-act-avg", tr("Daily average"), perDay ? amount(perDay) : "—", perDay ? tr("per day with usage") : null, t, { size: 18 })))
-    .child(h_flex().gap(12).items_center()
-      .child(figure("tr-streak-now", tr("Current streak"), daysText(runs.current.length), span(runs.current), t, { size: 18, color: runs.current.length ? accentInk(t) : null }))
-      .child(vrule(t, 40))
-      .child(figure("tr-streak-best", tr("Longest streak"), daysText(runs.longest.length), span(runs.longest), t, { size: 18 })));
+    .child(v_flex().gap(4)
+      .child(h_flex().gap(16)
+        .child(stat(tr("Total"), total.tokens ? amount(total) : "—", total.tokens ? tr("{n} tokens", { n: formatTokens(total.tokens) }) : null, t))
+        .child(stat(tr("Best day"), best ? amount(best[1]) : "—", best ? shortDay(best[0]) : null, t)))
+      .child(h_flex().gap(16)
+        .child(stat(tr("Daily average"), perDay ? amount(perDay) : "—", null, t))
+        .child(stat(tr("Streak"), daysText(runs.current.length), runs.longest.length ? tr("best {n}", { n: daysText(runs.longest.length) }) : null, t,
+          runs.current.length ? accentInk(t) : null))));
 }

@@ -1,7 +1,7 @@
 import { div } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
 import { barChart } from "./charts.js";
-import { COLOR, FAMILY, accentInk, alpha, avatar, button, caption, dot, figure, githubButton, rankBadge, rankChange, rule, segmented, vrule } from "./style.js";
+import { COLOR, CONTENT_W, FAMILY, accentInk, alpha, avatar, button, caption, dot, figure, githubButton, rankBadge, rankChange, rule, segmented, vrule } from "./style.js";
 import { shortDay } from "../lib/dates.js";
 import { commits, formatTokens, formatUsd } from "../lib/format.js";
 import { tr } from "../lib/locale.js";
@@ -181,7 +181,7 @@ function profileView(s, t) {
     .child(v_flex().gap(8)
       .child(caption(tr("Last 30 days"), t))
       .child(barChart("tr-profile-days", data.days, {
-        width: 390,
+        width: CONTENT_W,
         height: 72,
         segments: (d) => [{ value: d.tokens, color: COLOR.accent }],
         tooltip: (d) => `${shortDay(d.day)}: ${tr("{n} tokens", { n: formatTokens(d.tokens) })}, ${formatUsd(d.cost_usd)}, ${commits(d.commits)}`,

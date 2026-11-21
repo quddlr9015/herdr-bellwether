@@ -3,12 +3,11 @@ import { h_flex, v_flex } from "gpui-base";
 import { rankingTab } from "./ranking.js";
 import { overviewTab } from "./overview.js";
 import { settingsTab } from "./settings.js";
-import { COLOR, FONT, down, iconButton, rule } from "./style.js";
+import { COLOR, FONT, PANEL_PAD, PANEL_W, down, iconButton, rule } from "./style.js";
 import { usageTab } from "./usage.js";
 import { formatAgo } from "../lib/format.js";
 import { tr } from "../lib/locale.js";
 
-const PANEL_W = 420;
 const ICONS = "mods/bellwether/icons";
 const TABS = () => [
   ["overview", tr("Overview"), "layout-dashboard"],
@@ -46,7 +45,7 @@ export function rankPanel(s, t) {
   else if (s.tab === "ranking") body = rankingTab(s, t);
   else if (s.tab === "settings") body = settingsTab(s, t);
   else body = usageTab(s, t);
-  return v_flex().id("tr-panel-body").w(PANEL_W).min_h(s.panelMinH).on_size_change((size, cx) => s.act.panelSize(size, cx)).p(14).gap(14).rounded(12).border(1).border_color(t.border).bg(t.popover).shadow_lg().font_family(FONT)
+  return v_flex().id("tr-panel-body").w(PANEL_W).min_h(s.panelMinH).on_size_change((size, cx) => s.act.panelSize(size, cx)).p(PANEL_PAD).gap(12).rounded(12).border(1).border_color(t.border).bg(t.popover).shadow_lg().font_family(FONT)
     .text_size(12).text_color(t.foreground)
     .child(v_flex().gap(6)
       .child(h_flex().gap(8).items_center()

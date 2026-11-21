@@ -61,7 +61,7 @@ function languageRow(s, t) {
 }
 
 export function settingsTab(s, t) {
-  const body = v_flex().gap(14);
+  const body = v_flex().gap(12);
   body.child(languageRow(s, t)).child(rule(t));
   if (s.login) {
     const settings = s.settings ?? { listed: true, share_commits: true };

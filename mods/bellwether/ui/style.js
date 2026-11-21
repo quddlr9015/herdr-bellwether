@@ -5,6 +5,12 @@ import { tr } from "../lib/locale.js";
 // Instrument Sans (OFL) ships in this mod's fonts/ folder, which Herdr loads at start.
 export const FONT = "Instrument Sans";
 
+// The panel: 380px wide (close to AI Token Monitor's), 12px padding; charts and
+// grids size themselves from CONTENT_W.
+export const PANEL_W = 380;
+export const PANEL_PAD = 12;
+export const CONTENT_W = PANEL_W - 2 * PANEL_PAD;
+
 // Jewel tones that read on light and dark Herdr themes alike.
 export const COLOR = {
   accent: "#1E8E5A",

@@ -5,6 +5,8 @@ import { addStrings } from "./locale.js";
 
 addStrings({
   ko: {
+    "Streak": "연속 사용",
+    "best {n}": "최장 {n}",
     "today": "오늘",
     "rank": "순위",
     "Enter {code} on GitHub": "GitHub에 {code} 입력",
@@ -143,6 +145,8 @@ addStrings({
     "My AI coding this week: {amount} · {commits}. Herdr mod: {url}": "이번 주 내 AI 코딩: {amount} · {commits}. Herdr 모드: {url}",
   },
   ja: {
+    "Streak": "連続",
+    "best {n}": "最長{n}",
     "today": "今日",
     "rank": "順位",
     "Enter {code} on GitHub": "GitHubで{code}を入力",
@@ -281,6 +285,8 @@ addStrings({
     "My AI coding this week: {amount} · {commits}. Herdr mod: {url}": "今週のAIコーディング：{amount} · {commits}。Herdr MOD：{url}",
   },
   "zh-Hans": {
+    "Streak": "连续",
+    "best {n}": "最长 {n}",
     "today": "今天",
     "rank": "排名",
     "Enter {code} on GitHub": "在 GitHub 输入 {code}",
@@ -419,6 +425,8 @@ addStrings({
     "My AI coding this week: {amount} · {commits}. Herdr mod: {url}": "我本周的 AI 编程：{amount} · {commits}。Herdr 模组：{url}",
   },
   "zh-Hant": {
+    "Streak": "連續",
+    "best {n}": "最長 {n}",
     "today": "今天",
     "rank": "排名",
     "Enter {code} on GitHub": "在 GitHub 輸入 {code}",
@@ -557,6 +565,8 @@ addStrings({
     "My AI coding this week: {amount} · {commits}. Herdr mod: {url}": "我本週的 AI 編程：{amount} · {commits}。Herdr 模組：{url}",
   },
   es: {
+    "Streak": "Racha",
+    "best {n}": "récord {n}",
     "today": "hoy",
     "rank": "puesto",
     "Enter {code} on GitHub": "Introduce {code} en GitHub",
@@ -695,6 +705,8 @@ addStrings({
     "My AI coding this week: {amount} · {commits}. Herdr mod: {url}": "Mi programación con IA esta semana: {amount} · {commits}. Mod de Herdr: {url}",
   },
   fr: {
+    "Streak": "Série",
+    "best {n}": "record {n}",
     "today": "aujourd'hui",
     "rank": "rang",
     "Enter {code} on GitHub": "Saisissez {code} sur GitHub",
@@ -833,6 +845,8 @@ addStrings({
     "My AI coding this week: {amount} · {commits}. Herdr mod: {url}": "Mon code avec l'IA cette semaine : {amount} · {commits}. Mod Herdr : {url}",
   },
   de: {
+    "Streak": "Serie",
+    "best {n}": "Rekord {n}",
     "today": "heute",
     "rank": "Rang",
     "Enter {code} on GitHub": "{code} auf GitHub eingeben",
@@ -841,7 +855,7 @@ addStrings({
     "Overview": "Übersicht",
     "Usage": "Nutzung",
     "Ranking": "Rangliste",
-    "Settings": "Einstellungen",
+    "Settings": "Optionen",
     "Updated {ago}": "Aktualisiert {ago}",
     "Not scanned yet": "Noch nicht gescannt",
     "Reading session logs…": "Sitzungslogs werden gelesen…",

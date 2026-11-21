@@ -66,7 +66,7 @@ const ROWS = [
   ["Tokens today / 7d", "오늘 / 7일 토큰", "今日 / 7日のトークン", "今天 / 7 天 Token", "今天 / 7 天 Token", "Tokens hoy / 7 d", "Tokens aujourd'hui / 7 j", "Tokens heute / 7 T"],
   ["Refreshing…", "새로고침 중…", "更新中…", "正在刷新…", "正在重新整理…", "Actualizando…", "Actualisation…", "Wird aktualisiert…"],
   ["Refresh now", "지금 새로고침", "今すぐ更新", "立即刷新", "立即重新整理", "Actualizar ahora", "Actualiser", "Jetzt aktualisieren"],
-  ["Settings", "설정", "設定", "设置", "設定", "Ajustes", "Réglages", "Einstellungen"],
+  ["Settings", "설정", "設定", "设置", "設定", "Ajustes", "Réglages", "Optionen"],
 
   // session
   ["This session", "이 세션", "このセッション", "当前会话", "目前工作階段", "Esta sesión", "Cette session", "Diese Sitzung"],
