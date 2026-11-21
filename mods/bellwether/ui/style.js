@@ -34,7 +34,7 @@ export const alpha = (hex, opacity) => hex + Math.round(opacity * 255).toString(
 
 export const down = (t) => t.ansi1 ?? t.blocked;
 
-export const caption = (text, t) => div().text_size(11).font_semibold().text_color(t.muted).child(text);
+export const caption = (text, t) => div().text_size(11.5).font_semibold().text_color(t.muted).child(text);
 
 export const rule = (t) => div().h(1).bg(t.border).flex_none();
 
@@ -94,18 +94,18 @@ export function avatar(login, path, size) {
 
 export function rankBadge(rank, t) {
   const medal = MEDALS[rank - 1];
-  if (!medal) return div().w(22).flex_none().flex().justify_center().text_color(t.dim).child(`${rank}`);
+  if (!medal) return div().w(22).flex_none().flex().justify_center().text_color(t.muted).child(`${rank}`);
   return div().size(22).flex_none().rounded_full().flex().items_center().justify_center()
-    .bg(medal).text_color(COLOR.white).text_size(11).font_semibold().child(`${rank}`);
+    .bg(medal).text_color(COLOR.white).text_size(11.5).font_semibold().child(`${rank}`);
 }
 
 /** ▲ climbed, ▼ fell, NEW was not ranked in the previous period. */
 export function rankChange(rank, previous, t) {
-  const cell = div().w(34).flex_none().flex().justify_end().text_size(10.5).font_semibold();
+  const cell = div().w(34).flex_none().flex().justify_end().text_size(11.5).font_semibold();
   if (previous == null) {
     return cell.child(div().px(4).rounded(4).bg(alpha(COLOR.accent, 0.14)).text_color(COLOR.accent).child("NEW"));
   }
   if (previous > rank) return cell.text_color(COLOR.accent).child(`▲${previous - rank}`);
   if (previous < rank) return cell.text_color(down(t)).child(`▼${rank - previous}`);
-  return cell.text_color(t.dim).child("–");
+  return cell.text_color(t.muted).child("–");
 }

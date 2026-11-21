@@ -33,7 +33,7 @@ function controls(s, t) {
       .child(navButton("tr-prev", "‹", s.offset < 12, (cx) => s.act.shift(1, cx), t))
       .child(div().font_semibold().text_color(t.foreground).whitespace_nowrap().child(s.periodText))
       .child(navButton("tr-next", "›", s.offset > 0, (cx) => s.act.shift(-1, cx), t))
-      .child(div().ml(4).text_size(11).text_color(t.dim).whitespace_nowrap().child(s.board ? `${s.board.participants} ranked` : ""))
+      .child(div().ml(4).text_size(11.5).text_color(t.muted).whitespace_nowrap().child(s.board ? `${s.board.participants} ranked` : ""))
       .child(div().flex_1())
       .when(s.family === "all", (e) => e.child(segmented("tr-metric", METRICS, s.metric, s.act.pickMetric, t))));
 }
@@ -46,12 +46,12 @@ function standingCard(s, t) {
     .child(avatar(s.login, s.avatarPath(s.login), 34))
     .child(v_flex().flex_1().min_w(0).gap(2)
       .child(div().truncate().font_semibold().text_color(t.foreground).child(s.login))
-      .child(div().text_size(11).text_color(t.muted).child(mine
+      .child(div().text_size(11.5).text_color(t.muted).child(mine
         ? `${formatTokens(mine.tokens)} tokens, ${formatUsd(mine.cost_usd)}, ${commits(mine.commits)}`
         : "Loading…")))
     .child(v_flex().items_end()
       .child(div().text_size(22).font_semibold().text_color(t.foreground).child(rank ? `#${rank}` : "—"))
-      .child(div().text_size(10.5).text_color(t.dim).child(hidden ? "hidden" : rank ? `of ${Math.max(s.board?.participants ?? 0, rank)}` : "no usage")));
+      .child(div().text_size(11.5).text_color(t.muted).child(hidden ? "hidden" : rank ? `of ${Math.max(s.board?.participants ?? 0, rank)}` : "no usage")));
 }
 
 function joinCard(s, t) {
@@ -67,7 +67,7 @@ function joinCard(s, t) {
   return h_flex().gap(12).items_center()
     .child(v_flex().flex_1().min_w(0).gap(2)
       .child(div().font_semibold().text_color(t.foreground).child("Join the leaderboard"))
-      .child(div().text_size(11).text_color(t.muted).child("Totals only. No prompts or code.")))
+      .child(div().text_size(11.5).text_color(t.muted).child("Totals only. No prompts or code.")))
     .child(div().flex_none().child(githubButton("tr-sign-in", "Sign in with GitHub", s.act.signIn)));
 }
 
@@ -98,12 +98,12 @@ function row(entry, s, t, { pinned = false } = {}) {
 
 function list(s, t) {
   const { board } = s;
-  if (s.boardError) return div().py(20).text_color(t.dim).child(s.boardError);
-  if (!board) return div().py(20).text_color(t.dim).child("Loading…");
+  if (s.boardError) return div().py(20).text_color(t.muted).child(s.boardError);
+  if (!board) return div().py(20).text_color(t.muted).child("Loading…");
   if (!board.entries.length) {
     return v_flex().py(28).gap(4).items_center()
       .child(div().font_semibold().text_color(t.foreground).child("No one here yet"))
-      .child(div().text_size(11).text_color(t.dim).child("Be the first on this board."));
+      .child(div().text_size(11.5).text_color(t.muted).child("Be the first on this board."));
   }
   // My row under the list whenever the list would not show it without scrolling.
   const place = board.entries.findIndex((entry) => entry.login === s.login);
@@ -120,19 +120,19 @@ function profileView(s, t) {
   const header = h_flex().items_center().gap(6)
     .child(div().id("tr-back").px(6).py(3).rounded(5).cursor_pointer().text_color(t.muted).hover((st) => st.bg(t.hover).text_color(t.foreground))
       .on_click((_e, cx) => s.act.closeProfile(cx)).child("‹ Leaderboard"));
-  if (s.profile?.error) return v_flex().gap(10).child(header).child(div().py(20).text_color(t.dim).child(s.profile.error));
-  if (!data) return v_flex().gap(10).child(header).child(div().py(20).text_color(t.dim).child("Loading…"));
+  if (s.profile?.error) return v_flex().gap(10).child(header).child(div().py(20).text_color(t.muted).child(s.profile.error));
+  if (!data) return v_flex().gap(10).child(header).child(div().py(20).text_color(t.muted).child("Loading…"));
   const stat = (label, value) => v_flex().flex_1().gap(3).p(10).rounded(8).bg(t.raised)
     .child(caption(label, t))
     .child(div().text_size(17).font_semibold().text_color(t.foreground).child(`${formatTokens(value.tokens)} tokens`))
-    .child(div().text_size(10.5).text_color(t.dim).child(`${formatUsd(value.cost_usd)}, ${commits(value.commits)}`));
+    .child(div().text_size(11.5).text_color(t.muted).child(`${formatUsd(value.cost_usd)}, ${commits(value.commits)}`));
   return v_flex().gap(12)
     .child(header)
     .child(h_flex().gap(12).items_center()
       .child(avatar(data.login, s.avatarPath(data.login), 40))
       .child(v_flex().flex_1().min_w(0)
         .child(div().text_size(15).font_semibold().text_color(t.foreground).truncate().child(data.login))
-        .child(div().text_size(11).text_color(t.dim).child(`Ranking since ${shortDay(data.joined)}`)))
+        .child(div().text_size(11.5).text_color(t.muted).child(`Ranking since ${shortDay(data.joined)}`)))
       .child(h_flex().gap(6)
         .child(button("tr-report-account", "Report", (cx) => s.act.reportAccount(data.login, cx), t))
         .child(button("tr-github", "GitHub", (cx) => s.act.openGitHubProfile(data.login, cx), t))))

@@ -1,3 +1,4 @@
+// Token Rank: secondary text in `muted` (`dim` falls under 3:1 on light themes) and at least 11.5px.
 import { div, svg } from "gpui-kit";
 import { HoverCard, h_flex } from "gpui-base";
 import { DIMMED, divider, levelColor, limitNumberColor, modIcon, providerIcon, sessionNumberColor, usageBar } from "./kit.js";
@@ -7,7 +8,7 @@ import { PANEL_CLOSE_DELAY_MS } from "../lib/mod.js";
 const BAR_W = 30;
 const PANEL_OPEN_DELAY_MS = 350;
 
-const label = (text, t) => div().text_size(10.5).text_color(t.dim).child(text);
+const label = (text, t) => div().text_size(11.5).text_color(t.muted).child(text);
 
 function segment(s, density, t) {
   return h_flex().gap(5).items_center().flex_none()
@@ -26,7 +27,7 @@ function providerGroup(g, density, t) {
   return h_flex().id(`ul-${g.providerId}`).gap(density === DENSITY.FULL ? 10 : 8).items_center().flex_none()
     .opacity(g.dim ? DIMMED : 1)
     .child(providerIcon(g.providerId, g.icon, t.foreground))
-    .when(g.mark != null, (e) => e.child(div().text_color(t.dim).child(g.mark)))
+    .when(g.mark != null, (e) => e.child(div().text_color(t.muted).child(g.mark)))
     .children(g.segments.map((s) => segment(s, density, t)))
     .when(g.spend != null, (e) => e.child(spendSegment(g.spend, t)));
 }

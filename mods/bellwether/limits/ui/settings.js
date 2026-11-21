@@ -1,3 +1,4 @@
+// Token Rank: secondary text in `muted` (`dim` falls under 3:1 on light themes) and at least 11.5px.
 import { div } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
 import { SESSION_TITLE, iconButton, providerIcon, rule } from "./kit.js";
@@ -27,7 +28,7 @@ function withBox(row, { on, label, extra, onToggle }, t) {
     .on_click(toggling(onToggle))
     .child(checkBox(on, t))
     .children(label)
-    .when(extra != null, (e) => e.child(div().text_color(t.dim).truncate().child(extra)));
+    .when(extra != null, (e) => e.child(div().text_color(t.muted).truncate().child(extra)));
 }
 
 function panelBox({ id, on, onToggle, inRow = false }, t) {
@@ -80,7 +81,7 @@ export function settingsPanel(canGoBack, states, panel) {
   const { t, act, prefs } = panel;
   return panelShell(panel)
     .child(header(canGoBack, act, t))
-    .child(h_flex().items_center().text_size(11).text_color(t.dim)
+    .child(h_flex().items_center().text_size(11.5).text_color(t.muted)
       .child(div().child("Bar")).child(div().flex_1()).child(div().child("Panel")))
     .child(v_flex().gap(1).children(settingsRows(prefs, states).flatMap((row) => providerChecks(row, act, t))))
     .child(rule(t))
@@ -88,5 +89,5 @@ export function settingsPanel(canGoBack, states, panel) {
     .child(check({ id: "opt-bars", on: prefs.showBars, label: [text("Show bars", t.foreground)], onToggle: act.toggleBars }, t))
     .child(rule(t))
     .child(sessionChecks(prefs, act, t))
-    .child(div().text_size(10.5).text_color(t.dim).child(DATA_NOTE));
+    .child(div().text_size(11.5).text_color(t.muted).child(DATA_NOTE));
 }

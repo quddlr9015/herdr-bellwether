@@ -13,7 +13,7 @@ function statCard(label, total, priced, t) {
   return v_flex().flex_1().min_w(0).gap(3).p(10).rounded(8).bg(t.raised)
     .child(caption(label, t))
     .child(div().text_size(19).font_semibold().text_color(t.foreground).child(headline))
-    .child(v_flex().text_size(10.5).text_color(t.dim)
+    .child(v_flex().text_size(11.5).text_color(t.muted)
       .child(div().truncate().child(priced ? `${formatTokens(total.tokens)} tokens` : "tokens"))
       .child(div().truncate().child(`${commits(total.commits)}`)));
 }
@@ -25,10 +25,10 @@ function totalCard(label, since, total, priced, t) {
   return h_flex().flex_1().min_w(0).gap(10).px(10).py(8).rounded(8).bg(t.raised).items_center()
     .child(v_flex().flex_1().min_w(0).gap(2)
       .child(caption(label, t))
-      .child(div().text_size(10.5).truncate().text_color(t.dim).child(since)))
+      .child(div().text_size(11.5).truncate().text_color(t.muted).child(since)))
     .child(v_flex().items_end().gap(1)
       .child(div().text_size(15).font_semibold().text_color(t.foreground).child(headline))
-      .child(div().text_size(10.5).whitespace_nowrap().text_color(t.dim).child(detail)));
+      .child(div().text_size(11.5).whitespace_nowrap().text_color(t.muted).child(detail)));
 }
 
 /**
@@ -46,7 +46,7 @@ function totals(days, today, priced, t) {
 }
 
 function legend(t) {
-  return h_flex().gap(10).text_size(10.5).text_color(t.muted).children(["claude", "codex"].map((family) =>
+  return h_flex().gap(10).text_size(11.5).text_color(t.muted).children(["claude", "codex"].map((family) =>
     h_flex().gap(4).items_center().child(dot(FAMILY[family].color)).child(FAMILY[family].label)));
 }
 
@@ -57,7 +57,7 @@ function modelRow(model, priced, t) {
       .child(dot(color))
       .child(div().flex_1().min_w(0).truncate().text_color(t.foreground).child(model.model))
       .child(div().text_color(t.muted).child(priced ? formatUsd(model.cost) : formatTokens(model.tokens)))
-      .child(div().w(34).flex().justify_end().text_color(t.dim).child(formatPercent(model.share))))
+      .child(div().w(34).flex().justify_end().text_color(t.muted).child(formatPercent(model.share))))
     .child(div().h(4).rounded_full().bg(t.raised)
       .child(div().h(4).rounded_full().w(Math.max(4, Math.round(model.share * CHART_W))).bg(color)));
 }
@@ -78,7 +78,7 @@ export function usageTab(s, t) {
   if (!s.scanned) {
     return v_flex().gap(6).py(24).items_center()
       .child(div().text_color(t.foreground).font_semibold().child("Reading your session logs…"))
-      .child(div().text_size(11).text_color(t.dim).child("The first scan of a long history can take a few minutes."));
+      .child(div().text_size(11.5).text_color(t.muted).child("The first scan of a long history can take a few minutes."));
   }
   return v_flex().gap(14)
     .child(v_flex().gap(8)
@@ -104,8 +104,8 @@ export function usageTab(s, t) {
         .child(heatmap(days, weightOf, t))
         .child(v_flex().gap(8)
           .child(v_flex().child(div().text_size(19).font_semibold().text_color(COLOR.accent).child(`${run}`))
-            .child(div().text_size(10.5).text_color(t.dim).child("day streak")))
+            .child(div().text_size(11.5).text_color(t.muted).child("day streak")))
           .when(Boolean(busiest && (busiest.cost || busiest.tokens)), (e) => e.child(v_flex()
             .child(div().text_color(t.foreground).font_semibold().child(amount(busiest)))
-            .child(div().text_size(10.5).text_color(t.dim).child(`busiest day, ${shortDay(busiest.day)}`)))))));
+            .child(div().text_size(11.5).text_color(t.muted).child(`busiest day, ${shortDay(busiest.day)}`)))))));
 }

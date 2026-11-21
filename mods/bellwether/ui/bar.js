@@ -4,7 +4,7 @@ import { sparkline } from "./charts.js";
 import { COLOR, FONT } from "./style.js";
 
 // Same grammar as the limit segments beside it: a small dim label, then the value.
-const label = (text, t) => div().text_size(10.5).text_color(t.dim).whitespace_nowrap().child(text);
+const label = (text, t) => div().text_size(11.5).text_color(t.muted).whitespace_nowrap().child(text);
 
 /** (logo) today $77.16 | 120M ▁▃▅ rank #3, or a short message before there are numbers. */
 function tokenRank(b, t) {

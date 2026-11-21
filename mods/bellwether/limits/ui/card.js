@@ -1,3 +1,4 @@
+// Token Rank: secondary text in `muted` (`dim` falls under 3:1 on light themes) and at least 11.5px.
 import { div, svg } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
 import { DIMMED, LEFT_COLUMN_W, NO_READING, PERCENT_COLUMN_W, levelColor, limitNumberColor, modIcon, numberCell, providerIcon, usageBar } from "./kit.js";
@@ -12,24 +13,24 @@ function cardRow(r, providerId, t) {
       .child(div().flex_1().min_w(0).truncate().text_color(t.muted).child(r.long))
       .child(usageBar(PANEL_BAR_W, r.fill, r.tick, levelColor(r.level, t), t))
       .child(numberCell(PERCENT_COLUMN_W, r.percent).text_color(limitNumberColor(r.level, r.percent, t)))
-      .child(numberCell(LEFT_COLUMN_W, r.left).text_size(11).text_color(t.dim)))
-    .when(r.detail !== "", (e) => e.child(div().text_size(11).text_color(t.dim).truncate().child(r.detail)));
+      .child(numberCell(LEFT_COLUMN_W, r.left).text_size(11.5).text_color(t.muted)))
+    .when(r.detail !== "", (e) => e.child(div().text_size(11.5).text_color(t.muted).truncate().child(r.detail)));
 }
 
 function groupBody(g, t) {
   const body = [];
-  if (g.age != null) body.push(div().text_size(11).text_color(t.dim).child(g.age));
+  if (g.age != null) body.push(div().text_size(11.5).text_color(t.muted).child(g.age));
   body.push(v_flex().gap(6).opacity(g.dim ? DIMMED : 1).children(g.rows.map((r) => cardRow(r, g.providerId, t))));
   return body;
 }
 
 export function failure(text, t) {
-  return div().flex_1().min_w(0).truncate().text_size(11).text_color(levelColor("hot", t)).child(`! ${text}`);
+  return div().flex_1().min_w(0).truncate().text_size(11.5).text_color(levelColor("hot", t)).child(`! ${text}`);
 }
 
 export function rightLabel(text, t) {
   return div().flex_1().min_w(0).flex().justify_end()
-    .child(div().min_w(0).truncate().text_size(11).text_color(t.dim).child(text));
+    .child(div().min_w(0).truncate().text_size(11.5).text_color(t.muted).child(text));
 }
 
 function header(g, arrows, panel) {
@@ -41,8 +42,8 @@ function header(g, arrows, panel) {
     .on_click((_e, cx) => act.fold(id, cx))
     .child(providerIcon(id, g.icon, t.foreground))
     .child(div().flex_none().font_semibold().child(g.name))
-    .when(g.plan != null, (e) => e.child(div().flex_none().px(5).rounded(4).bg(t.raised).text_size(10).text_color(t.accent).child(g.plan)))
-    .when(g.folded || arrows || panel.hovered === id, (e) => e.child(svg(modIcon(arrow)).size(12).text_color(t.dim)));
+    .when(g.plan != null, (e) => e.child(div().flex_none().px(5).rounded(4).bg(t.raised).text_size(11.5).text_color(t.accent).child(g.plan)))
+    .when(g.folded || arrows || panel.hovered === id, (e) => e.child(svg(modIcon(arrow)).size(12).text_color(t.muted)));
 }
 
 function foldedNumbers(g, s, t) {
@@ -50,14 +51,14 @@ function foldedNumbers(g, s, t) {
   return h_flex().gap(8).items_center().flex_none()
     .when(!g.failed, (e) => e.child(div().opacity(opacity).child(usageBar(FOLDED_BAR_W, s.fill, s.tick, levelColor(s.level, t), t))))
     .child(numberCell(PERCENT_COLUMN_W, s.percent).opacity(opacity).text_color(limitNumberColor(s.level, s.percent, t)))
-    .child(numberCell(LEFT_COLUMN_W, s.left).opacity(opacity).text_size(11).text_color(t.dim));
+    .child(numberCell(LEFT_COLUMN_W, s.left).opacity(opacity).text_size(11.5).text_color(t.muted));
 }
 
 function groupWithoutSummary(g, head, panel) {
   const { t } = panel;
   if (g.folded && g.failed) return v_flex().gap(8).child(head.child(failure(g.status, t)));
   head.child(div().flex_1())
-    .child(div().min_w(0).truncate().text_size(11).text_color(g.failed ? levelColor("hot", t) : t.dim).child(g.status));
+    .child(div().min_w(0).truncate().text_size(11.5).text_color(g.failed ? levelColor("hot", t) : t.muted).child(g.status));
   if (g.folded) return v_flex().gap(8).child(head);
   return v_flex().gap(8).child(head).children(groupBody(g, t));
 }

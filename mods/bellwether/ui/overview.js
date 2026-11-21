@@ -12,7 +12,7 @@ function updateLine(s, t) {
   return v_flex().gap(12)
     .child(h_flex().gap(10).items_center()
       .child(div().flex_1().min_w(0).truncate().text_color(u.error ? down(t) : t.foreground).child(text))
-      .when(Boolean(u.latest.url), (e) => e.child(div().id("tr-ov-whats-new").text_size(11).text_color(t.muted).cursor_pointer()
+      .when(Boolean(u.latest.url), (e) => e.child(div().id("tr-ov-whats-new").text_size(11.5).text_color(t.muted).cursor_pointer()
         .hover((st) => st.text_color(t.foreground)).on_click((_e, cx) => s.act.openRelease(cx)).child("What's new")))
       .child(div().flex_none().child(button("tr-ov-update", u.installing ? "Installing…" : "Update", s.act.installUpdate, t, { primary: true }))))
     .child(rule(t));
@@ -23,7 +23,7 @@ function card(id, title, value, detail, t, { accent = false, onClick = null } = 
     .when(Boolean(onClick), (e) => e.cursor_pointer().hover((s) => s.bg(t.hover)).on_click((_e, cx) => onClick(cx)))
     .child(caption(title, t))
     .child(div().text_size(17).font_semibold().text_color(accent ? COLOR.accent : t.foreground).child(value))
-    .child(div().text_size(10.5).truncate().text_color(t.dim).child(detail));
+    .child(div().text_size(11.5).truncate().text_color(t.muted).child(detail));
 }
 
 /** Plan limits on top, then today's and this week's spend and the weekly rank. */
@@ -43,7 +43,7 @@ export function overviewTab(s, t) {
 
   return v_flex().gap(12)
     .when(Boolean(s.update?.available), (e) => e.child(updateLine(s, t)))
-    .child(s.limitsPanel ?? div().text_color(t.dim).child("Reading plan limits…"))
+    .child(s.limitsPanel ?? div().text_color(t.muted).child("Reading plan limits…"))
     .child(rule(t))
     .child(h_flex().gap(8)
       .child(card("tr-ov-today", "Today", s.scanned ? todayValue : "—", s.scanned ? todayDetail : "Reading logs…", t, { onClick: (cx) => s.act.pickTab("usage", cx) }))

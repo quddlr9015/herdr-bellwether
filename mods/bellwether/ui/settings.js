@@ -6,7 +6,7 @@ function setting(id, title, detail, on, onFlip, t) {
   return h_flex().gap(12).items_center()
     .child(v_flex().flex_1().gap(2)
       .child(div().text_color(t.foreground).child(title))
-      .child(div().text_size(11).text_color(t.dim).child(detail)))
+      .child(div().text_size(11.5).text_color(t.muted).child(detail)))
     .child(toggle(id, on, onFlip, t));
 }
 
@@ -26,8 +26,8 @@ function updateRow(s, t) {
     .child(v_flex().flex_1().min_w(0).gap(2)
       .child(div().text_color(t.foreground).child(`Bellwether ${s.version}${s.herdrVersion ? `, Herdr ${s.herdrVersion}` : ""}`))
       .child(h_flex().gap(6).items_center()
-        .child(div().text_size(11).truncate().text_color(u.error ? down(t) : t.dim).child(status))
-        .when(Boolean(u.available && u.latest?.url), (e) => e.child(div().id("tr-release-notes").text_size(11).text_color(t.muted).cursor_pointer()
+        .child(div().text_size(11.5).truncate().text_color(u.error ? down(t) : t.muted).child(status))
+        .when(Boolean(u.available && u.latest?.url), (e) => e.child(div().id("tr-release-notes").text_size(11.5).text_color(t.muted).cursor_pointer()
           .hover((st) => st.text_color(t.foreground)).on_click((_e, cx) => s.act.openRelease(cx)).child("What's new")))))
     .child(div().flex_none().child(action));
 }
@@ -41,7 +41,7 @@ export function settingsTab(s, t) {
         .child(avatar(s.login, s.avatarPath(s.login), 32))
         .child(v_flex().flex_1()
           .child(div().font_semibold().text_color(t.foreground).child(s.login))
-          .child(div().text_size(11).text_color(t.dim).child("Signed in with GitHub")))
+          .child(div().text_size(11.5).text_color(t.muted).child("Signed in with GitHub")))
         .child(button("tr-sign-out", "Sign out", s.act.signOut, t)))
       .child(rule(t))
       .child(caption("Privacy", t))
@@ -66,12 +66,12 @@ export function settingsTab(s, t) {
     body.child(rule(t)).child(h_flex().items_center().justify_between()
       .child(v_flex().gap(2)
         .child(div().text_color(t.foreground).child("Delete my data"))
-        .child(div().text_size(11).text_color(t.dim).child("Removes your account and everything uploaded.")))
+        .child(div().text_size(11.5).text_color(t.muted).child("Removes your account and everything uploaded.")))
       .child(button("tr-delete", s.confirmDelete ? "Click again to delete" : "Delete", s.act.deleteData, t, { danger: true })));
   }
   body.child(rule(t)).child(updateRow(s, t)).child(h_flex().items_center().justify_between()
-    .child(div().text_size(11).text_color(t.dim).child("Something broken or wrong?"))
+    .child(div().text_size(11.5).text_color(t.muted).child("Something broken or wrong?"))
     .child(button("tr-report", "Report a problem", s.act.reportBug, t)));
-  return body.child(div().text_size(10.5).text_color(t.dim).child(
+  return body.child(div().text_size(11.5).text_color(t.muted).child(
     `Costs are estimates at API list prices${s.pricingVersion ? ` (prices v${s.pricingVersion})` : ""}; subscription plans are not reflected. Days are UTC.`));
 }

@@ -1,3 +1,4 @@
+// Token Rank: secondary text in `muted` (`dim` falls under 3:1 on light themes) and at least 11.5px.
 import { div } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
 import { SESSION_TITLE, iconButton, levelColor, rule, sessionNumberColor, usageBar } from "./kit.js";
@@ -21,10 +22,10 @@ function sessionBlock(v, t) {
   return v_flex().gap(4)
     .child(h_flex().gap(6).items_center()
       .child(div().flex_none().font_semibold().child(SESSION_TITLE))
-      .child(div().flex_1().min_w(0).truncate().text_color(t.dim).child(v.title))
+      .child(div().flex_1().min_w(0).truncate().text_color(t.muted).child(v.title))
       .when(v.context.fill != null, (r) => r.child(usageBar(SESSION_BAR_W, v.context.fill, null, levelColor(v.context.level, t), t)))
       .child(div().flex_none().whitespace_nowrap().text_color(sessionNumberColor(v.context.level, v.context.text, t)).child(`ctx ${v.context.text}`)))
-    .child(div().text_size(11).text_color(t.dim).child(stats));
+    .child(div().text_size(11.5).text_color(t.muted).child(stats));
 }
 
 function choiceRow(row, panel) {
@@ -37,13 +38,13 @@ function sessionPicker(panel) {
   const { t, act, choosing, choices } = panel;
   return v_flex().gap(5)
     .child(div().font_semibold().child(SESSION_TITLE))
-    .child(div().id("ul-pick-session").text_size(11).text_color(t.dim).cursor_pointer()
+    .child(div().id("ul-pick-session").text_size(11.5).text_color(t.muted).cursor_pointer()
       .on_click((_e, cx) => act.togglePicker(cx))
       .child(choosing ? "Cancel" : "Choose Codex session…"))
     .when(choosing, (el) => el.children(choices.choices.map((row) => choiceRow(row, panel))));
 }
 
-const changeSession = (panel) => div().id("ul-change-session").text_size(11).text_color(panel.t.dim).cursor_pointer()
+const changeSession = (panel) => div().id("ul-change-session").text_size(11.5).text_color(panel.t.muted).cursor_pointer()
   .on_click((_e, cx) => panel.act.changeSession(cx)).child("Change Codex session");
 
 function footer(panel) {
