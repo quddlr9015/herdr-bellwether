@@ -26,11 +26,15 @@ Bellwether reads the session logs Claude Code and Codex already write on your ma
 
 3. Run `herdr-app check ~/.config/herdr-app/mods/bellwether`.
 
-The status bar shows today's cost and a seven-day sparkline as soon as the first scan finishes. Hover it, open **Ranking** and choose **Sign in with GitHub** to join.
+The status bar shows today's cost and tokens and a seven-day sparkline as soon as the first scan finishes. Click it, open **Ranking** and choose **Sign in with GitHub** to join.
 
 Optional keys (`keys.json`): `"bellwether:open"` (the same panel in a tab), `"bellwether:refresh"`, `"bellwether:sign-in"`, `"bellwether:sign-out"`. The same commands run from a shell with `herdr-app do bellwether.open`.
 
 Requirements: macOS or Linux, `git`, `curl`, `sh` and `awk`. [ripgrep](https://github.com/BurntSushi/ripgrep) is used when it is installed and makes the first scan of a large history much faster. Plan limits come from the installed `claude` and `codex` CLIs, as described in [herdr-usage-limits](https://github.com/nozikov/herdr-usage-limits#readme).
+
+## Reporting a problem
+
+Settings → **Report a problem** opens a new GitHub issue with the versions (Bellwether, Herdr, OS), the last scan result and the pricing table version filled in; nothing is sent until you submit it, and it never includes your login, numbers or file paths. A profile's **Report** button opens an account report for that login. The version lives in `mods/bellwether/lib/version.js`; releases are tagged `v<version>`.
 
 ## What is sent
 

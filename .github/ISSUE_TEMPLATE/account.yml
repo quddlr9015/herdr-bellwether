@@ -1,0 +1,19 @@
+name: Account report
+description: A leaderboard account with numbers that can't be real, or a name that shouldn't be there.
+title: "Account report: "
+labels: [account-report]
+body:
+  - type: input
+    id: login
+    attributes:
+      label: GitHub login
+      description: Filled in by the Report button on a profile.
+    validations:
+      required: true
+  - type: textarea
+    id: reason
+    attributes:
+      label: Why
+      description: Which board and period, and what looks wrong.
+    validations:
+      required: true

@@ -47,6 +47,11 @@ export function settingsTab(s, t) {
         .child(div().text_size(11).text_color(t.dim).child("Removes your account and everything uploaded.")))
       .child(button("tr-delete", s.confirmDelete ? "Click again to delete" : "Delete", s.act.deleteData, t, { danger: true })));
   }
+  body.child(rule(t)).child(h_flex().items_center().justify_between()
+    .child(v_flex().gap(2)
+      .child(div().text_color(t.foreground).child(`Bellwether ${s.version}`))
+      .child(div().text_size(11).text_color(t.dim).child(s.herdrVersion ? `Herdr ${s.herdrVersion}` : "Herdr")))
+    .child(button("tr-report", "Report a problem", s.act.reportBug, t)));
   return body.child(div().text_size(10.5).text_color(t.dim).child(
     `Costs are estimates at API list prices${s.pricingVersion ? ` (prices v${s.pricingVersion})` : ""}; subscription plans are not reflected. Days are UTC.`));
 }

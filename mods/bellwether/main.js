@@ -1,11 +1,13 @@
 import { View } from "gpui-kit";
-import { appHome, checking, exec, home, nextCommand, notify, props, readTextFile, run, spaces, theme, writeTextFile } from "herdr";
+import { appHome, checking, exec, home, nextCommand, notify, props, readTextFile, run, spaces, theme, updates, writeTextFile } from "herdr";
 import { h_flex } from "gpui-base";
 import { ApiError, request } from "./lib/api.js";
 import { anchorDay, periodLabel, periodRange, todayUtc } from "./lib/dates.js";
 import { commits, formatTokens, formatUsd } from "./lib/format.js";
 import { historyFile, mergeHistory, parseHistory, readLedger } from "./lib/history.js";
+import { accountReportUrl, bugReportUrl, diagnostics } from "./lib/report.js";
 import { pendingUpload, runScan } from "./lib/scan.js";
+import { VERSION } from "./lib/version.js";
 import { buildDays, dayOf, lastDays, sumRange } from "./lib/stats.js";
 import { statusBar } from "./ui/bar.js";
 import { rankPanel } from "./ui/panel.js";
@@ -401,6 +403,15 @@ export default class TokenRank extends View {
         cx.notify();
       },
       openGitHubProfile: (login, cx) => cx.open_url(`https://github.com/${login}`),
+      reportAccount: (login, cx) => cx.open_url(accountReportUrl(login)),
+      reportBug: (cx) => cx.spawn(async (task) => {
+        const os = await exec("uname", ["-sr"]).then((r) => r.stdout.trim()).catch(() => null);
+        const versions = updates();
+        task.open_url(bugReportUrl(diagnostics({
+          version: VERSION, herdr: versions?.app?.version, core: versions?.core?.version, os,
+          scanError: this.scanError, scannedAt: this.scannedAt, pricingVersion: this.pricing?.version, signedIn: Boolean(this.auth),
+        }, home())));
+      }),
       openTab: () => run("tab.new", { name: "Bellwether", mod: MOD, props: { role: "panel" } }),
       refresh: (cx) => {
         this.limits?.act.refresh(cx);
@@ -491,6 +502,8 @@ export default class TokenRank extends View {
       days: this.days,
       priced: Boolean(this.pricing),
       pricingVersion: this.pricing?.version ?? null,
+      version: VERSION,
+      herdrVersion: updates()?.app?.version ?? null,
       scanned: Boolean(this.scan),
       period: this.period,
       family: this.family,
