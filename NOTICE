@@ -19,3 +19,7 @@ themes (ui/bar.js, ui/card.js, ui/panel.js, ui/settings.js).
 mods/bellwether/icons/github.svg is the GitHub mark from Primer Octicons
 (https://github.com/primer/octicons, icons/mark-github-16.svg), released under
 the MIT License, used for the Sign in with GitHub button.
+
+mods/bellwether/icons/layout-dashboard.svg, chart-column.svg, trophy.svg,
+settings.svg and arrow-up-right.svg are from Lucide
+(https://github.com/lucide-icons/lucide), released under the ISC License.

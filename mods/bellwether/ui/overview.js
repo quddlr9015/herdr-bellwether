@@ -1,6 +1,6 @@
 import { div } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
-import { COLOR, button, caption, down, rule } from "./style.js";
+import { accentInk, button, down, figure, rule, vrule } from "./style.js";
 import { periodRange, todayUtc } from "../lib/dates.js";
 import { formatTokens, formatUsd } from "../lib/format.js";
 import { sumRange } from "../lib/stats.js";
@@ -18,13 +18,8 @@ function updateLine(s, t) {
     .child(rule(t));
 }
 
-function card(id, title, value, detail, t, { accent = false, onClick = null } = {}) {
-  return v_flex().id(id).flex_1().min_w(0).gap(3).p(10).rounded(8).bg(t.raised)
-    .when(Boolean(onClick), (e) => e.cursor_pointer().hover((s) => s.bg(t.hover)).on_click((_e, cx) => onClick(cx)))
-    .child(caption(title, t))
-    .child(div().text_size(17).font_semibold().text_color(accent ? COLOR.accent : t.foreground).child(value))
-    .child(div().text_size(11.5).truncate().text_color(t.muted).child(detail));
-}
+const card = (id, title, value, detail, t, { accent = false, onClick = null } = {}) =>
+  figure(id, title, value, detail, t, { size: 20, color: accent ? accentInk(t) : null, onClick });
 
 /** Plan limits on top, then today's and this week's spend and the weekly rank. */
 export function overviewTab(s, t) {
@@ -45,8 +40,10 @@ export function overviewTab(s, t) {
     .when(Boolean(s.update?.available), (e) => e.child(updateLine(s, t)))
     .child(s.limitsPanel ?? div().text_color(t.muted).child("Reading plan limits…"))
     .child(rule(t))
-    .child(h_flex().gap(8)
+    .child(h_flex().gap(12).items_center()
       .child(card("tr-ov-today", "Today", s.scanned ? todayValue : "—", s.scanned ? todayDetail : "Reading logs…", t, { onClick: (cx) => s.act.pickTab("usage", cx) }))
+      .child(vrule(t, 44))
       .child(card("tr-ov-week", "This week", s.scanned ? weekValue : "—", s.scanned ? weekDetail : "Reading logs…", t, { onClick: (cx) => s.act.pickTab("usage", cx) }))
+      .child(vrule(t, 44))
       .child(rankCard));
 }

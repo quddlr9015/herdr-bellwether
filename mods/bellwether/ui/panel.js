@@ -3,26 +3,30 @@ import { h_flex, v_flex } from "gpui-base";
 import { rankingTab } from "./ranking.js";
 import { overviewTab } from "./overview.js";
 import { settingsTab } from "./settings.js";
-import { COLOR, FONT, down, rule } from "./style.js";
+import { COLOR, FONT, down, iconButton, rule } from "./style.js";
 import { usageTab } from "./usage.js";
 import { formatAgo } from "../lib/format.js";
 
 const PANEL_W = 420;
-const TABS = [["overview", "Overview"], ["usage", "Usage"], ["ranking", "Ranking"], ["settings", "Settings"]];
+const ICONS = "mods/bellwether/icons";
+const TABS = [
+  ["overview", "Overview", "layout-dashboard"],
+  ["usage", "Usage", "chart-column"],
+  ["ranking", "Ranking", "trophy"],
+  ["settings", "Settings", "settings"],
+];
 
+/** Four equal tabs under the header, icon and label, the chosen one inked and underlined. */
 function tabs(s, t) {
-  return h_flex().gap(12).children(TABS.map(([value, label]) => {
+  return h_flex().children(TABS.map(([value, label, icon]) => {
     const on = value === s.tab;
-    return v_flex().id(`tr-tab-${value}`).gap(4).cursor_pointer().on_click((_e, cx) => s.act.pickTab(value, cx))
-      .child(div().text_color(on ? t.foreground : t.muted).when(on, (e) => e.font_semibold()).hover((st) => st.text_color(t.foreground)).child(label))
-      .child(div().h(2).rounded_full().bg(on ? COLOR.accent : t.popover));
+    const ink = on ? t.foreground : t.muted;
+    return v_flex().id(`tr-tab-${value}`).flex_1().cursor_pointer().on_click((_e, cx) => s.act.pickTab(value, cx))
+      .child(h_flex().h(30).gap(6).items_center().justify_center().rounded(6).hover((st) => st.bg(t.hover))
+        .child(svg(`${ICONS}/${icon}.svg`).size(14).text_color(ink))
+        .child(div().text_color(ink).when(on, (e) => e.font_semibold()).child(label)))
+      .child(div().h(2).mx(10).rounded_full().bg(on ? t.foreground : t.popover));
   }));
-}
-
-function iconButton(id, icon, tip, onClick, t) {
-  return div().id(id).size(22).rounded(5).flex().items_center().justify_center().cursor_pointer().tooltip(tip)
-    .hover((st) => st.bg(t.hover)).on_click((_e, cx) => onClick(cx))
-    .child(svg(icon).size(13).text_color(t.muted));
 }
 
 function footer(s, t) {
@@ -41,13 +45,15 @@ export function rankPanel(s, t) {
   else if (s.tab === "ranking") body = rankingTab(s, t);
   else if (s.tab === "settings") body = settingsTab(s, t);
   else body = usageTab(s, t);
-  return v_flex().id("tr-panel-body").w(PANEL_W).min_h(s.panelMinH).on_size_change((size, cx) => s.act.panelSize(size, cx)).p(12).gap(12).rounded(12).border(1).border_color(t.border).bg(t.popover).shadow_lg().font_family(FONT)
+  return v_flex().id("tr-panel-body").w(PANEL_W).min_h(s.panelMinH).on_size_change((size, cx) => s.act.panelSize(size, cx)).p(14).gap(14).rounded(12).border(1).border_color(t.border).bg(t.popover).shadow_lg().font_family(FONT)
     .text_size(12).text_color(t.foreground)
-    .child(h_flex().items_center().justify_between()
-      .child(h_flex().gap(7).items_center()
+    .child(v_flex().gap(6)
+      .child(h_flex().gap(8).items_center()
         .child(svg("mods/bellwether/icons/logo.svg").size(22).text_color(COLOR.accent))
-        .child(div().text_size(13).font_semibold().child("Bellwether")))
-      .child(tabs(s, t)))
+        .child(div().text_size(14).font_semibold().child("Bellwether"))
+        .child(div().flex_1())
+        .child(div().text_size(11.5).text_color(t.muted).child(`v${s.version}`)))
+      .child(v_flex().child(tabs(s, t)).child(rule(t))))
     .when(Boolean(s.notice), (e) => e.child(div().px(10).py(6).rounded(6).bg(t.raised).text_size(11.5).text_color(t.foreground).child(s.notice ?? "")))
     .child(body)
     .child(div().flex_1())

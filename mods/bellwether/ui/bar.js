@@ -1,7 +1,7 @@
 import { div, svg } from "gpui-kit";
 import { Popover, h_flex } from "gpui-base";
 import { sparkline } from "./charts.js";
-import { COLOR, FONT } from "./style.js";
+import { COLOR, FONT, accentInk } from "./style.js";
 
 // Same grammar as the limit segments beside it: a small dim label, then the value.
 const label = (text, t) => div().text_size(11.5).text_color(t.muted).whitespace_nowrap().child(text);
@@ -22,7 +22,7 @@ function tokenRank(b, t) {
   if (b.spark) content.child(div().ml(3).child(sparkline(b.spark, COLOR.accent, t)));
   if (b.rank) {
     content.child(label("rank", t).ml(7))
-      .child(div().whitespace_nowrap().font_semibold().text_color(COLOR.accent).child(`#${b.rank}`));
+      .child(div().whitespace_nowrap().font_semibold().text_color(accentInk(t)).child(`#${b.rank}`));
   }
   return content;
 }

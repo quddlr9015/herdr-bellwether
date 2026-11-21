@@ -1,2 +1,2 @@
 /** Bellwether's version: bump it with every release and tag the commit `v<version>`. */
-export const VERSION = "1.2.1";
+export const VERSION = "1.3.0";
