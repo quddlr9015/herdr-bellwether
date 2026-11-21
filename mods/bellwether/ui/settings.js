@@ -1,6 +1,6 @@
 import { div } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
-import { avatar, button, caption, githubButton, rule, toggle } from "./style.js";
+import { avatar, button, caption, down, githubButton, rule, toggle } from "./style.js";
 
 function setting(id, title, detail, on, onFlip, t) {
   return h_flex().gap(12).items_center()
@@ -8,6 +8,28 @@ function setting(id, title, detail, on, onFlip, t) {
       .child(div().text_color(t.foreground).child(title))
       .child(div().text_size(11).text_color(t.dim).child(detail)))
     .child(toggle(id, on, onFlip, t));
+}
+
+/** Version, what GitHub has, and the one action that fits: update, or look again. */
+function updateRow(s, t) {
+  const u = s.update ?? {};
+  let status = "Up to date";
+  if (u.installing) status = `Installing ${u.latest?.version}…`;
+  else if (u.checking) status = "Checking for updates…";
+  else if (u.error) status = `Update check failed: ${u.error}`;
+  else if (u.available) status = `Version ${u.latest.version} is out`;
+  else if (!u.latest) status = "Not checked yet";
+  const action = u.available
+    ? button("tr-update", u.installing ? "Installing…" : `Update to ${u.latest.version}`, s.act.installUpdate, t, { primary: true })
+    : button("tr-check-update", "Check for updates", s.act.checkUpdate, t);
+  return h_flex().gap(12).items_center()
+    .child(v_flex().flex_1().min_w(0).gap(2)
+      .child(div().text_color(t.foreground).child(`Bellwether ${s.version}${s.herdrVersion ? `, Herdr ${s.herdrVersion}` : ""}`))
+      .child(h_flex().gap(6).items_center()
+        .child(div().text_size(11).truncate().text_color(u.error ? down(t) : t.dim).child(status))
+        .when(Boolean(u.available && u.latest?.url), (e) => e.child(div().id("tr-release-notes").text_size(11).text_color(t.muted).cursor_pointer()
+          .hover((st) => st.text_color(t.foreground)).on_click((_e, cx) => s.act.openRelease(cx)).child("What's new")))))
+    .child(div().flex_none().child(action));
 }
 
 export function settingsTab(s, t) {
@@ -47,10 +69,8 @@ export function settingsTab(s, t) {
         .child(div().text_size(11).text_color(t.dim).child("Removes your account and everything uploaded.")))
       .child(button("tr-delete", s.confirmDelete ? "Click again to delete" : "Delete", s.act.deleteData, t, { danger: true })));
   }
-  body.child(rule(t)).child(h_flex().items_center().justify_between()
-    .child(v_flex().gap(2)
-      .child(div().text_color(t.foreground).child(`Bellwether ${s.version}`))
-      .child(div().text_size(11).text_color(t.dim).child(s.herdrVersion ? `Herdr ${s.herdrVersion}` : "Herdr")))
+  body.child(rule(t)).child(updateRow(s, t)).child(h_flex().items_center().justify_between()
+    .child(div().text_size(11).text_color(t.dim).child("Something broken or wrong?"))
     .child(button("tr-report", "Report a problem", s.act.reportBug, t)));
   return body.child(div().text_size(10.5).text_color(t.dim).child(
     `Costs are estimates at API list prices${s.pricingVersion ? ` (prices v${s.pricingVersion})` : ""}; subscription plans are not reflected. Days are UTC.`));

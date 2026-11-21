@@ -9,7 +9,10 @@ const label = (text, t) => div().text_size(10.5).text_color(t.dim).whitespace_no
 /** (logo) today $77.16 | 120M ▁▃▅ rank #3, or a short message before there are numbers. */
 function tokenRank(b, t) {
   const content = h_flex().gap(5).items_center().flex_none()
-    .child(svg("mods/bellwether/icons/logo.svg").size(15).text_color(b.accent ? COLOR.accent : t.muted).mr(2));
+    .child(div().relative().mr(2)
+      .child(svg("mods/bellwether/icons/logo.svg").size(15).text_color(b.accent ? COLOR.accent : t.muted))
+      // A newer release is out (Settings → Update).
+      .when(Boolean(b.update), (e) => e.child(div().absolute().top(-2).right(-3).size(6).rounded_full().bg(COLOR.coral))));
   if (b.today == null) return content.child(div().whitespace_nowrap().text_color(b.accent ? t.foreground : t.muted).child(b.label));
   content.child(label("today", t)).child(div().whitespace_nowrap().text_color(t.foreground).child(b.today));
   if (b.todayTokens) {

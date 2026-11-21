@@ -7,6 +7,7 @@ import { commits, formatTokens, formatUsd } from "./lib/format.js";
 import { historyFile, mergeHistory, parseHistory, readLedger } from "./lib/history.js";
 import { accountReportUrl, bugReportUrl, diagnostics } from "./lib/report.js";
 import { pendingUpload, runScan } from "./lib/scan.js";
+import { CHECK_EVERY_MS, compareVersions, latestRelease } from "./lib/update.js";
 import { VERSION } from "./lib/version.js";
 import { buildDays, dayOf, lastDays, sumRange } from "./lib/stats.js";
 import { statusBar } from "./ui/bar.js";
@@ -43,8 +44,9 @@ export default class TokenRank extends View {
       sent: `${this.stateDir}/uploaded.json`,
       pricing: `${this.stateDir}/pricing.json`,
       history: `${this.stateDir}/history.json`,
+      update: `${this.stateDir}/update.json`,
     };
-    this.files = { auth: null, sent: null, pricing: null, history: null };
+    this.files = { auth: null, sent: null, pricing: null, history: null, update: null };
     this.helper = `${appHome()}/mods/${MOD}/helpers/scan.sh`;
     // role "panel": the whole panel in a tab (`bellwether:open`) instead of a status-bar block.
     this.role = props()?.role === "panel" ? "panel" : "bar";
@@ -74,6 +76,7 @@ export default class TokenRank extends View {
     this.avatarBusy = false;
     this.act = this.actions();
     this.barWidth = 0;
+    this.updateState = { checking: false, installing: false, error: null };
     // Tallest the panel has been. The hover panel hangs from the bar, so a shorter
     // tab would pull its top edge (and the tabs) out from under the pointer and close it.
     this.panelMinH = 0;
@@ -86,13 +89,15 @@ export default class TokenRank extends View {
     cx.spawn(async (later) => {
       await this.loadFiles();
       later.notify();
+      await this.checkUpdate(later);
       await this.loadPricing(later);
       await this.sync(later);
     });
     cx.timer.every(SCAN_EVERY_MS, (later) => later.spawn((task) => this.sync(task)));
+    cx.timer.every(6 * 60 * 60 * 1000, (later) => later.spawn((task) => this.checkUpdate(task)));
     // Commands for keys.json ("bellwether:refresh") or `herdr-app do bellwether.refresh`.
     cx.spawn(async (later) => {
-      const commands = { refresh: this.act.refresh, "sign-in": this.act.signIn, "sign-out": this.act.signOut, open: this.act.openTab };
+      const commands = { refresh: this.act.refresh, "sign-in": this.act.signIn, "sign-out": this.act.signOut, open: this.act.openTab, "check-update": this.act.checkUpdate, update: this.act.installUpdate };
       for (;;) {
         const command = commands[await nextCommand()];
         // Every shown copy hears a command; only the status-bar copy acts on it.
@@ -110,6 +115,7 @@ export default class TokenRank extends View {
     this.sent = parseJson(this.files.sent, {});
     this.pricing = parseJson(this.files.pricing, null)?.table ?? null;
     this.history = parseHistory(this.files.history);
+    this.updateInfo = parseJson(this.files.update, {});
   }
 
   /** Replaces one of our JSON files, re-reading it once if another write got there first. */
@@ -146,6 +152,57 @@ export default class TokenRank extends View {
       cx.notify();
     } catch {
       // Keep the cached table (or show tokens only) until the next scan retries.
+    }
+  }
+
+  // ---- updates -------------------------------------------------------------
+
+  /**
+   * Once a day (or now, when asked) reads GitHub's latest release. A newer one is
+   * announced once; the first start after an update says it went in.
+   */
+  async checkUpdate(cx, force = false) {
+    if (this.role !== "bar") return;
+    const info = this.updateInfo ?? {};
+    if (info.seen_version && info.seen_version !== VERSION) {
+      notify({ title: "Bellwether", body: `Updated to ${VERSION}.`, level: "success" });
+    }
+    if (info.seen_version !== VERSION) await this.saveUpdateInfo({ seen_version: VERSION });
+    if (!force && info.checked_at && Date.now() - info.checked_at < CHECK_EVERY_MS) return;
+    this.updateState = { ...this.updateState, checking: true, error: null };
+    cx.notify();
+    try {
+      const latest = await latestRelease();
+      const fresh = compareVersions(latest.version, VERSION) > 0;
+      if (fresh && this.updateInfo.notified !== latest.version) {
+        notify({ title: "Bellwether", body: `Version ${latest.version} is out. Settings → Update.` });
+        await this.saveUpdateInfo({ notified: latest.version });
+      }
+      await this.saveUpdateInfo({ checked_at: Date.now(), latest });
+      this.updateState = { checking: false, error: null };
+    } catch (error) {
+      this.updateState = { checking: false, error: message(error) };
+    }
+    cx.notify();
+  }
+
+  async saveUpdateInfo(change) {
+    this.updateInfo = { ...(this.updateInfo ?? {}), ...change };
+    await this.save("update", this.updateInfo).catch(() => {});
+  }
+
+  /** Installs the latest release over this folder; Herdr then reloads the new files. */
+  async installUpdate(cx) {
+    const latest = this.updateInfo?.latest;
+    if (!latest || this.updateState?.installing) return;
+    this.updateState = { installing: true, error: null };
+    cx.notify();
+    const script = `${appHome()}/mods/${MOD}/helpers/update.sh`;
+    const result = await exec("sh", [script, latest.tag, `${appHome()}/mods/${MOD}`, this.stateDir], { timeout: 3 * 60 * 1000 }).catch((error) => ({ code: -1, stderr: message(error) }));
+    // On success Herdr reloads this mod from the new files and this copy stops here.
+    if (result.code !== 0) {
+      this.updateState = { installing: false, error: result.stderr?.trim().split("\n").pop() || `update exited with ${result.code}` };
+      cx.notify();
     }
   }
 
@@ -404,6 +461,9 @@ export default class TokenRank extends View {
       },
       openGitHubProfile: (login, cx) => cx.open_url(`https://github.com/${login}`),
       reportAccount: (login, cx) => cx.open_url(accountReportUrl(login)),
+      checkUpdate: (cx) => cx.spawn((task) => this.checkUpdate(task, true)),
+      installUpdate: (cx) => cx.spawn((task) => this.installUpdate(task)),
+      openRelease: (cx) => this.updateInfo?.latest?.url && cx.open_url(this.updateInfo.latest.url),
       reportBug: (cx) => cx.spawn(async (task) => {
         const os = await exec("uname", ["-sr"]).then((r) => r.stdout.trim()).catch(() => null);
         const versions = updates();
@@ -483,7 +543,8 @@ export default class TokenRank extends View {
     if (this.signIn) return { label: this.signIn.user_code ? `Enter ${this.signIn.user_code} on GitHub` : "Signing in…", accent: true };
     if (!this.scan) return { label: this.scanning ? "Reading logs…" : "Bellwether", accent: false };
     const today = priced ? formatUsd(todayUsage.cost ?? 0) : null;
-    return { rank, today: today ?? formatTokens(todayUsage.tokens), todayTokens: today ? formatTokens(todayUsage.tokens) : null, accent: true, spark };
+    const update = Boolean(this.updateInfo?.latest && compareVersions(this.updateInfo.latest.version, VERSION) > 0);
+    return { rank, today: today ?? formatTokens(todayUsage.tokens), todayTokens: today ? formatTokens(todayUsage.tokens) : null, accent: true, spark, update };
   }
 
   render(cx) {
@@ -503,6 +564,11 @@ export default class TokenRank extends View {
       priced: Boolean(this.pricing),
       pricingVersion: this.pricing?.version ?? null,
       version: VERSION,
+      update: {
+        ...this.updateState,
+        latest: this.updateInfo?.latest ?? null,
+        available: Boolean(this.updateInfo?.latest && compareVersions(this.updateInfo.latest.version, VERSION) > 0),
+      },
       herdrVersion: updates()?.app?.version ?? null,
       scanned: Boolean(this.scan),
       period: this.period,
